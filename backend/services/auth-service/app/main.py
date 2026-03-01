@@ -1,0 +1,6 @@
+from fastapi import FastAPI
+
+app = FastAPI(
+    title="API регистрации и авторизации",
+    version='0.0.1'
+)

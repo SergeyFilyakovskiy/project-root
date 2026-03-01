@@ -1,0 +1,17 @@
+{
+  "folders": [
+    { "name": "root", "path": "." },
+    { "name": "auth-service", "path": "services/auth-service" },
+    { "name": "integration-service", "path": "services/integration-service" },
+    { "name": "sync-worker", "path": "services/sync-worker" },
+    { "name": "normalization-service", "path": "services/normalization-service" },
+    { "name": "analytics-service", "path": "services/analytics-service" },
+    { "name": "manual-input-service", "path": "services/manual-input-service" },
+    { "name": "reporting-service", "path": "services/reporting-service" },
+    { "name": "notification-service", "path": "services/notification-service" },
+    { "name": "scheduler-service", "path": "services/scheduler-service" }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+  }
+}
