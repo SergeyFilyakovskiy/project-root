@@ -1,2 +1,3 @@
 backend/services/auth-service/.env.example
 backend/services/auth-service/.vscode/settings.json
+backend/services/auth-service/.env

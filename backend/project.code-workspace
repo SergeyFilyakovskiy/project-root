@@ -9,7 +9,8 @@
     { "name": "manual-input-service", "path": "services/manual-input-service" },
     { "name": "reporting-service", "path": "services/reporting-service" },
     { "name": "notification-service", "path": "services/notification-service" },
-    { "name": "scheduler-service", "path": "services/scheduler-service" }
+    { "name": "scheduler-service", "path": "services/scheduler-service" },
+    { "name": "api-gateway", "path": "services/api-gateway"}
   ],
   "settings": {
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"

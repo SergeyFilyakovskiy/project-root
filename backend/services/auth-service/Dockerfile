@@ -1,9 +1,7 @@
-# auth-service, integration-service, analytics-service,
-# manual-input-service, reporting-service, notification-service
-
 FROM python:3.11-slim
 
-# системные зависимости (нужны для psycopg2, weasyprint и др.)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
@@ -11,17 +9,21 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# сначала только зависимости — чтобы кешировался слой
 COPY pyproject.toml .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+COPY uv.lock* .
 
-# потом копируем код
+RUN uv sync --no-dev
+
 COPY app/ ./app/
 
-# healthcheck встроенный
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+ENV PATH="/app/.venv/bin:$PATH"
+ENV VIRTUAL_ENV="/app/.venv"
+
+RUN useradd --no-create-home --shell /bin/false appuser
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 EXPOSE 8000
 

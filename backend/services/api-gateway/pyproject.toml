@@ -1,0 +1,12 @@
+[project]
+name = "api-gateway"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "httpx>=0.27.0",       # для проксирования запросов к сервисам
+    "redis>=5.0.0",        # для rate limiting и кеша сессий
+    "pydantic-settings>=2.0.0",
+    "python-jose[cryptography]>=3.3.0",  # для проверки JWT
+]
