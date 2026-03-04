@@ -17,7 +17,7 @@ class DatabaseConfig(BaseSettings):
     Класс определяющий все переменные 
     связанные с БД, для того что бы переменна 
     была успешно загружена, она должна начинаться 
-    с префикса 'POSTGRES'
+    с префикса 'postgres'
 
     """
 
@@ -49,7 +49,7 @@ class JWTConfig(BaseSettings):
     Класс определяющий все переменные 
     связанные с JWT, для того что бы переменна 
     была успешно загружена, она должна начинаться 
-    с префикса 'JWT'
+    с префикса 'jwt'
 
     """
     model_config = SettingsConfigDict(
@@ -61,12 +61,36 @@ class JWTConfig(BaseSettings):
     
     jwt_secret: SecretStr = Field(validation_alias='jwt_secret')
     jwt_algorithm: SecretStr = Field(validation_alias='jwt_algorithm')
+    jwt_access_expire: int = Field(validation_alias='jwt_access_expire')
+    jwt_refresh_expire: int = Field(validation_alias='jwt_refresh_expire')
     
     def get_jwt_secret(self):
         return self.jwt_secret.get_secret_value()
     
     def get_jwt_algorithm(self):
         return self.jwt_algorithm.get_secret_value()
+    
+class RedisConfig(BaseSettings):
+    
+    """
+    Класс, содержащий переменные 
+    связанные с Redis, для того чтобы переменна
+    была успешно загружена, она должна начинаться 
+    с 'redis' 
+    """
 
+    model_config = SettingsConfigDict(
+        env_prefix= 'redis',
+        env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"),
+        case_sensitive= True,
+        extra='ignore',
+    )
+    
+    redis_host: str = Field(validation_alias='redis_host')
+    redis_port: str = Field(validation_alias='redis_port')
+    redis_db: str = Field(validation_alias='redis_db')
+    
+    
 db_config = DatabaseConfig() # type: ignore
 jwt_config = JWTConfig()    # type: ignore
+redis_config = RedisConfig() #type: ignore

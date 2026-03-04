@@ -9,13 +9,14 @@ from alembic import context, op
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-from app.db.session import Base, db_migrations_url
+from app.core.config import db_config
+from app.db.session import Base
 from app.models.user import User, Profile
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", db_migrations_url)
+config.set_main_option("sqlalchemy.url", db_config.get_db_migrations_url())
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
