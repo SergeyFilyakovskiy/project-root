@@ -5,6 +5,11 @@
 """
 from datetime import datetime
 
+
+import redis.asyncio as redis
+from typing import AsyncGenerator
+from app.core.config import redis_config
+
 from sqlalchemy import Integer, func, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncAttrs
@@ -71,4 +76,41 @@ class Base(AsyncAttrs, DeclarativeBase):
     
     @declared_attr.directive
     def __tablename__(cls) -> str:
-        return cls.__name__.lower() + 's'               
+        return cls.__name__.lower() + 's'            
+
+
+##################################
+#                                #
+#      Подключение к Redis       #
+#                                # 
+##################################
+
+redis_pool = redis.ConnectionPool.from_url(
+    redis_config.get_redis_url(),
+    decode_responses = True,
+    max_connections = 20,
+)
+
+def redis_connection(method):
+    
+    """
+    Декоратор для подключения к Redis
+
+    Аргументы:
+    - method - Любая функция
+    - *args 
+    - **kwargs 
+
+    Возращаемое: 
+    - session - Сессия в redis
+    """
+    
+    async def wrapper(*args, **kwargs):
+        async with redis.Redis(connection_pool=redis_pool) as session:
+            try:
+                return await method(*args, session= session, **kwargs)
+            except Exception as e:
+                raise e
+            finally:
+                await session.aclose()
+        return wrapper

@@ -5,9 +5,10 @@
 
 """
 
-from app.api.schemas import CreateUserRequest
+from app.api.schemas import CreateUserRequest, TokenSchema
 from app.models.user import User
 from app.core.config import jwt_config
+from app.db.session import redis_connection
 
 from .config import JWTConfig
 from passlib.context import CryptContext
@@ -60,8 +61,12 @@ def hash_password(user: CreateUserRequest) -> str:
 
 class Token:
 
-    @classmethod
-    def create_access_token( cls, user: User) -> str:
+    
+    refresh_token: str
+    access_token: str
+    REFRESH_TTL = int(timedelta(days=jwt_config.jwt_refresh_expire).total_seconds())
+
+    def encode_access_token( self, user: User) -> str:
         
         """
         Создает jwt access токен
@@ -90,13 +95,14 @@ class Token:
                                 jwt_config.get_jwt_secret(), 
                                 algorithm= jwt_config.get_jwt_algorithm()
                             )
+            self.access_token = access_token
+            
             return access_token
         
         except JWTError as e:
             raise e
     
-    @classmethod
-    def create_refresh_token(cls, user: User) -> str:
+    def encode_refresh_token(self, user: User) -> str:
         """
         Создает refresh токен
 
@@ -122,8 +128,73 @@ class Token:
                                 jwt_config.get_jwt_secret(), 
                                 algorithm= jwt_config.get_jwt_algorithm()
                             )
-            return refresh_token
+            self.refresh_token = refresh_token\
+            
+            return f"refresh:{refresh_token}"
         
         except JWTError as e:
             raise e
         
+    def decode_token(self, token: TokenSchema) -> dict:
+        """
+         
+         Декодирует токены
+
+         Аргументы:
+         - token: TokenSchema - Токен для расшифровки
+
+          Возвращает:
+          - dict - Словарь содержащий полезную нагрузку
+
+        """
+
+        return jwt.decode(
+            token.token, 
+            jwt_config.get_jwt_secret(), 
+            algorithms=jwt_config.get_jwt_algorithm()
+            )
+    
+    def user_sessions_key(self, user_id: int)-> str:
+        return f"user_sessions:{user_id}"
+        
+
+    @redis_connection    
+    async def save_refresh_token_in_redis(self, user: User, session: Redis):
+        """
+
+        Cохраняет закодированный refresh токен
+        в redis
+
+        Аргументы:
+        - user: User - Данные о пользователе
+
+        """
+        
+
+        async with session.pipeline(transaction=True) as pipe:
+            
+            try:
+                pipe.setex(
+                    self.encode_refresh_token(user),
+                    self.REFRESH_TTL,
+                    str(user.id),
+                    )
+                pipe.sadd(
+                    self.user_sessions_key(user.id),
+                    self.refresh_token
+                )
+                pipe.expire(
+                    self.user_sessions_key(user.id),
+                    self.REFRESH_TTL
+                )
+                await pipe.execute()
+            except Exception as e:
+                raise e
+    
+    @redis_connection
+    async def revoke(self, token: TokenSchema, session: Redis):
+        """Отзывает токен при logout"""
+
+        async with session.pipeline(transaction=True) as pipe:
+            pipe.delete(f"{token.token_type}:{token.token}")
+            

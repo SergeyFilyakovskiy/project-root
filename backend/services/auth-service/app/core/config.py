@@ -86,9 +86,15 @@ class RedisConfig(BaseSettings):
         extra='ignore',
     )
     
+    redis_password: SecretStr = Field(validation_alias='redis_password')
     redis_host: str = Field(validation_alias='redis_host')
     redis_port: str = Field(validation_alias='redis_port')
     redis_db: str = Field(validation_alias='redis_db')
+
+    def get_redis_url(self):
+        return f"redis://:{self.redis_password.get_secret_value()}"\
+        f"@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
     
     
 db_config = DatabaseConfig() # type: ignore

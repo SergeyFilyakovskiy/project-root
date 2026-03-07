@@ -15,11 +15,11 @@ class CreateUserRequest(BaseModel):
     email: EmailStr 
     password: str = Field(min_length=3, max_length=30)
 
-class Token(BaseModel):
+class TokenSchema (BaseModel):
     """
     Docstring for Token
     """
-    access_token: str
+    token: str
     token_type: str
 
 class UserSchema(BaseModel):
