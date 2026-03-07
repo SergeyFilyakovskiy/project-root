@@ -47,6 +47,11 @@ class Profile(Base):
         nullable=False,
     )
 
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey('auth.users.id'),
+        unique=True
+    )
+
     user: Mapped["User"] = relationship(
         "User",
         back_populates="profile",
@@ -73,10 +78,6 @@ class User(Base):
     role: Mapped[RoleEnum] = mapped_column(
         default= RoleEnum.USER,
         nullable= False
-    )
-    
-    profile_id: Mapped[int] = mapped_column(
-        ForeignKey('auth.profiles.id')
     )
     
     profile: Mapped['Profile'] = relationship(

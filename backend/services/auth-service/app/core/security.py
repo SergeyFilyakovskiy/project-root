@@ -5,7 +5,7 @@
 
 """
 
-from app.api.schemas import CreateUserRequest, TokenSchema
+from app.api.schemas import UserRegisterSchema, TokenSchema
 from app.models.user import User
 from app.core.config import jwt_config
 from app.db.session import redis_connection
@@ -44,7 +44,7 @@ def verify_password(password: str, user: User) -> bool:
     """
     return bcrypt_context.verify(password, user.hashed_password)
 
-def hash_password(user: CreateUserRequest) -> str:
+def hash_password(user: UserRegisterSchema) -> str:
     """
     
     Хеширует пароль для записи в БД
@@ -151,7 +151,7 @@ class Token:
         return jwt.decode(
             token.token, 
             jwt_config.get_jwt_secret(), 
-            algorithms=jwt_config.get_jwt_algorithm()
+            algorithms=[jwt_config.get_jwt_algorithm()]
             )
     
     def user_sessions_key(self, user_id: int)-> str:
@@ -193,8 +193,62 @@ class Token:
     
     @redis_connection
     async def revoke(self, token: TokenSchema, session: Redis):
-        """Отзывает токен при logout"""
+        """
+        Отзывает токен при logout
+
+        Аргументы:
+        - token: TokenSchema - Токен для отзыва
+
+        """
+        payload = self.decode_token(token)
+        user_id = payload.get("sub")
 
         async with session.pipeline(transaction=True) as pipe:
-            pipe.delete(f"{token.token_type}:{token.token}")
-            
+            try:
+                pipe.delete(f"{token.token_type}:{token.token}")
+                if user_id:
+                    pipe.srem(
+                        self.user_sessions_key(user_id),
+                        token.token
+                    )
+                await pipe.execute()
+            except Exception as e:
+                raise e
+
+
+    @redis_connection
+    async def is_valid(self, token: TokenSchema, session: Redis) -> bool:
+        """
+        Проверяет существует ли токен в Redis
+
+        Аргументы:
+        - token: TokenSchema - Токен для проверки
+
+        Возвращает:
+        - bool - True если токен валиден
+
+        """
+        result = await session.exists(
+            f"{token.token_type}:{token.token}"
+        )
+        return bool(result)
+
+    @redis_connection
+    async def get_user_id_by_token(
+        self, token: TokenSchema, session: Redis
+    ) -> int | None:
+        """
+        Возвращает user_id по refresh токену из Redis
+
+        Аргументы:
+        - token: TokenSchema - Токен для поиска
+
+        Возвращает:
+        - int | None - ID пользователя или None
+
+        """
+        value = await session.get(
+            f"{token.token_type}:{token.token}"
+        )
+        return int(value) if value else None
+
