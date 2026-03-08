@@ -26,6 +26,22 @@ class TokenTypeEnum(str):
 #       TOKEN
 # ========================
 
+class TokenData(BaseModel):
+    """
+    Схема данных извлечённых из JWT токена.
+
+    Поля:
+    - id: int - идентификатор пользователя
+    - email: EmailStr - электронная почта пользователя
+    - role: RoleEnum - роль пользователя
+
+    """
+
+    id: int
+    email: EmailStr
+    role: RoleEnum
+    
+
 class TokenSchema(BaseModel):
     """
     Схема токена.

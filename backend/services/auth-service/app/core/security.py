@@ -5,12 +5,11 @@
 
 """
 
-from app.api.schemas import UserRegisterSchema, TokenSchema
+from app.api.schemas import UserRegisterSchema, TokenSchema, TokenData
 from app.models.user import User
 from app.core.config import jwt_config
 from app.db.session import redis_connection
 
-from .config import JWTConfig
 from passlib.context import CryptContext
 from datetime import timedelta, datetime, timezone
 from fastapi import APIRouter, HTTPException, Cookie
@@ -18,6 +17,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from redis.asyncio import Redis
+from starlette import status
 
 bcrypt_context = CryptContext(
     schemes=['bcrypt'],
@@ -85,6 +85,7 @@ class Token:
         payload = {
             'sub': user.email,
             'id': user.id,
+            'role': user.role,
             'type': 'access',
             'exp': expires,
         }
@@ -134,8 +135,9 @@ class Token:
         
         except JWTError as e:
             raise e
-        
-    def decode_token(self, token: TokenSchema) -> dict:
+    
+    @classmethod
+    def decode_token(cls, token: str) -> dict:
         """
          
          Декодирует токены
@@ -149,7 +151,7 @@ class Token:
         """
 
         return jwt.decode(
-            token.token, 
+            token, 
             jwt_config.get_jwt_secret(), 
             algorithms=[jwt_config.get_jwt_algorithm()]
             )
@@ -200,7 +202,7 @@ class Token:
         - token: TokenSchema - Токен для отзыва
 
         """
-        payload = self.decode_token(token)
+        payload = self.decode_token(token.token)
         user_id = payload.get("sub")
 
         async with session.pipeline(transaction=True) as pipe:
@@ -252,3 +254,85 @@ class Token:
         )
         return int(value) if value else None
 
+    @classmethod
+    def get_token_payload(cls, token: str) -> TokenData:
+        """
+        Декодирует access токен и возвращает данные пользователя.
+
+        Аргументы:
+        - token: str - JWT access токен
+
+        Возвращает:
+        - TokenData - данные пользователя из токена
+
+        Исключения:
+        - HTTPException 401 если токен невалиден или не является access токеном
+
+        """
+        try:
+            payload = cls.decode_token(token)
+
+            if payload.get('type') != 'access':
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Неверный тип токена"
+                )
+
+            user_id = payload.get('id')
+            user_email = payload.get('sub')
+            user_role = payload.get('role')
+
+            if user_id is None or user_email is None or user_role is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Не удалось валидировать токен"
+                )
+
+            return TokenData(id=user_id, email=user_email, role=user_role)
+
+        except JWTError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Не удалось валидировать токен"
+            ) from e
+        
+    @classmethod
+    def get_user_id_from_refresh(cls, token: str) -> int:
+        """
+        Декодирует refresh токен и возвращает ID пользователя.
+        Используется при обновлении access токена.
+
+        Аргументы:
+        - token: str - JWT refresh токен
+
+        Возвращает:
+        - int - ID пользователя
+
+        Исключения:
+        - HTTPException 401 если токен невалиден или не является refresh токеном
+
+        """
+        try:
+            payload = cls.decode_token(token)
+
+            if payload.get('type') != 'refresh':
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Неверный тип токена"
+                )
+
+            user_id = payload.get('sub')
+            if user_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Не удалось валидировать токен"
+                )
+
+            return int(user_id)
+
+        except JWTError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Не удалось валидировать токен"
+            ) from e
+    

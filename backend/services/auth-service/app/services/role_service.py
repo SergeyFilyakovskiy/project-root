@@ -1,33 +1,53 @@
-
-
-from typing import Sequence
+from typing import Annotated, Sequence
 
 from fastapi import Depends, HTTPException
-
-from app.api.schemas import TokenData
-
 from starlette import status
 
+from app.api.schemas import RoleEnum
+from app.services.user_service import get_current_user
+
+
 class RoleChecker:
-
     """
+    Класс для проверки роли пользователя.
 
-    Класс для проверки роли пользователя
-    
+    Используется как dependency в роутерах.
+
+    Пример использования:
+    - @router.get("/admin", dependencies=[Depends(admin_only)])
+    - @router.get("/admin", dependencies=[Depends(manager_or_admin)])
+
     """
 
     def __init__(self, allowed_roles: Sequence[str]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, current_user: TokenData = Depends(get_current_user)):
-            
+    def __call__(self, current_user = get_current_user()):
+        """
+        Проверяет роль текущего пользователя.
 
+        Аргументы:
+        - current_user - данные пользователя из JWT токена
+
+        Возвращает:
+        - current_user если роль разрешена
+
+        Исключения:
+        - HTTPException 403 если роль не разрешена
+
+        """
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail="Operation not permitted"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для выполнения операции"
             )
-        
         return current_user
-    
-admin_only = RoleChecker(["admin", "super_admin"])
+
+
+# ========================
+#    Готовые чекеры
+# ========================
+
+admin_only = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.ADMIN]))]
+
+manager_or_admin = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.MANAGER, RoleEnum.ADMIN]))]
