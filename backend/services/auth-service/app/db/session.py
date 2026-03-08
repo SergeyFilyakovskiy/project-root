@@ -5,7 +5,7 @@
 """
 from datetime import datetime
 
-
+import functools
 import redis.asyncio as redis
 from typing import AsyncGenerator
 from app.core.config import redis_config
@@ -29,9 +29,19 @@ async_session = async_sessionmaker(
 )
 
 
-#Декоратор позволяющий открывать для любой функции 
-#соединение с БД
 def connection(method):
+    """
+    Декоратор для подключения к Postgres
+
+    Аргументы:
+    - method - Любая функция
+    - *args 
+    - **kwargs 
+
+    Возращаемое: 
+    - session - Сессия в Postgres
+    """
+    @functools.wraps(method)
     async def wrapper(*args, **kwargs):
         async with async_session() as session:
             try:
@@ -42,8 +52,43 @@ def connection(method):
             finally: 
                 await session.aclose()
 
-        return wrapper
+    return wrapper
 
+##################################
+#                                #
+#      Подключение к Redis       #
+#                                # 
+##################################
+
+redis_pool = redis.ConnectionPool.from_url(
+    redis_config.get_redis_url(),
+    decode_responses = True,
+    max_connections = 20,
+)
+
+def redis_connection(method):
+    
+    """
+    Декоратор для подключения к Redis
+
+    Аргументы:
+    - method - Любая функция
+    - *args 
+    - **kwargs 
+
+    Возращаемое: 
+    - session - Сессия в redis
+    """
+    @functools.wraps(method)
+    async def wrapper(*args, **kwargs):
+        async with redis.Redis(connection_pool=redis_pool) as session:
+            try:
+                return await method(*args, session= session, **kwargs)
+            except Exception as e:
+                raise e
+            finally:
+                await session.aclose()
+    return wrapper
 
 class Base(AsyncAttrs, DeclarativeBase):
    
@@ -77,40 +122,3 @@ class Base(AsyncAttrs, DeclarativeBase):
     @declared_attr.directive
     def __tablename__(cls) -> str:
         return cls.__name__.lower() + 's'            
-
-
-##################################
-#                                #
-#      Подключение к Redis       #
-#                                # 
-##################################
-
-redis_pool = redis.ConnectionPool.from_url(
-    redis_config.get_redis_url(),
-    decode_responses = True,
-    max_connections = 20,
-)
-
-def redis_connection(method):
-    
-    """
-    Декоратор для подключения к Redis
-
-    Аргументы:
-    - method - Любая функция
-    - *args 
-    - **kwargs 
-
-    Возращаемое: 
-    - session - Сессия в redis
-    """
-    
-    async def wrapper(*args, **kwargs):
-        async with redis.Redis(connection_pool=redis_pool) as session:
-            try:
-                return await method(*args, session= session, **kwargs)
-            except Exception as e:
-                raise e
-            finally:
-                await session.aclose()
-        return wrapper

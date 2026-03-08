@@ -131,7 +131,7 @@ class Token:
                             )
             self.refresh_token = refresh_token\
             
-            return f"refresh:{refresh_token}"
+            return refresh_token
         
         except JWTError as e:
             raise e
