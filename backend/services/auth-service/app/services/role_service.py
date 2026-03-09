@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from starlette import status
 
 from app.api.schemas import RoleEnum
-from app.services.user_service import CurrentUser
+from app.core.dependencies import CurrentUser
 
 
 class RoleChecker:
@@ -44,10 +44,3 @@ class RoleChecker:
         return current_user
 
 
-# ========================
-#    Готовые чекеры
-# ========================
-
-admin_only = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.ADMIN]))]
-
-manager_or_admin = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.MANAGER, RoleEnum.ADMIN]))]

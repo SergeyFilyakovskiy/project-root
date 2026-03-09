@@ -8,7 +8,7 @@
 from app.api.schemas import UserRegisterSchema, TokenSchema, TokenData
 from app.models.user import User
 from app.core.config import jwt_config
-from app.db.session import redis_connection
+from app.core.dependencies import redis_dependency
 
 from passlib.context import CryptContext
 from datetime import timedelta, datetime, timezone
@@ -156,11 +156,11 @@ class Token:
             algorithms=[jwt_config.get_jwt_algorithm()]
             )
     
-    def user_sessions_key(self, user_id: int)-> str:
+    @classmethod
+    def user_sessions_key(cls, user_id: int)-> str:
         return f"user_sessions:{user_id}"
         
-
-    @redis_connection    
+   
     async def save_refresh_token_in_redis(self, user: User, session: Redis):
         """
 
@@ -193,8 +193,8 @@ class Token:
             except Exception as e:
                 raise e
     
-    @redis_connection
-    async def revoke(self, token: TokenSchema, session: Redis):
+    @classmethod
+    async def revoke(cls, token: TokenSchema, session: Redis):
         """
         Отзывает токен при logout
 
@@ -202,7 +202,7 @@ class Token:
         - token: TokenSchema - Токен для отзыва
 
         """
-        payload = self.decode_token(token.token)
+        payload = cls.decode_token(token.token)
         user_id = payload.get("sub")
 
         async with session.pipeline(transaction=True) as pipe:
@@ -210,7 +210,7 @@ class Token:
                 pipe.delete(f"{token.token_type}:{token.token}")
                 if user_id:
                     pipe.srem(
-                        self.user_sessions_key(user_id),
+                        cls.user_sessions_key(user_id),
                         token.token
                     )
                 await pipe.execute()
@@ -218,8 +218,8 @@ class Token:
                 raise e
 
 
-    @redis_connection
-    async def is_valid(self, token: TokenSchema, session: Redis) -> bool:
+    @classmethod
+    async def is_valid(cls, token: TokenSchema, session: Redis) -> bool:
         """
         Проверяет существует ли токен в Redis
 
@@ -235,9 +235,10 @@ class Token:
         )
         return bool(result)
 
-    @redis_connection
+    
+    @classmethod
     async def get_user_id_by_token(
-        self, token: TokenSchema, session: Redis
+        cls, token: TokenSchema, session: Redis
     ) -> int | None:
         """
         Возвращает user_id по refresh токену из Redis
