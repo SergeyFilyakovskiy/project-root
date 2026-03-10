@@ -8,12 +8,11 @@
 from app.api.schemas import UserRegisterSchema, TokenSchema, TokenData
 from app.models.user import User
 from app.core.config import jwt_config
-from app.core.dependencies import redis_dependency
+
 
 from passlib.context import CryptContext
 from datetime import timedelta, datetime, timezone
-from fastapi import APIRouter, HTTPException, Cookie
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from redis.asyncio import Redis
@@ -21,7 +20,6 @@ from starlette import status
 
 bcrypt_context = CryptContext(
     schemes=['bcrypt'],
-    decprecated = 'auto',
 )
 
 oauth2_bearer = OAuth2PasswordBearer(

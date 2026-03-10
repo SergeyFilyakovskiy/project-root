@@ -7,7 +7,6 @@ from datetime import datetime
 
 import functools
 import redis.asyncio as redis
-from typing import AsyncGenerator
 from app.core.config import redis_config
 
 from sqlalchemy import Integer, func, DateTime

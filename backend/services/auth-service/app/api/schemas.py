@@ -2,19 +2,11 @@
     Module with Pydantic schemas for request/response validation
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-
-# ========================
-#       ENUMS
-# ========================
-
-class RoleEnum(str):
-    ADMIN = 'admin'
-    MANAGER = 'manager'
-    USER = 'user'
+from app.models.user import RoleEnum
 
 
 class TokenTypeEnum(str):
@@ -165,7 +157,7 @@ class UserRegisterSchema(BaseModel):
     username: str = Field(min_length=3, max_length=30)
     first_name: str = Field(min_length=1, max_length=50)
     last_name: str | None = Field(default=None, max_length=50)
-    date_of_birth: datetime
+    date_of_birth: date
 
 
 class UserLoginSchema(BaseModel):

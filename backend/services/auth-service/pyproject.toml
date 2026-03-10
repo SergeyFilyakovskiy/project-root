@@ -13,6 +13,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "psycopg2-binary>=2.9.11",
     "redis>=7.2.1",
+    "pydantic[email]>=2.12.5",
+    "bcrypt==4.0.1",
 ]
 
 [tool.setuptools.packages.find]

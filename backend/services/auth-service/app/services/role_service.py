@@ -1,10 +1,12 @@
-from typing import Annotated, Sequence
-
-from fastapi import Depends, HTTPException
+from typing import Sequence
+from fastapi import HTTPException, Depends
 from starlette import status
+from typing import Sequence, Annotated
 
-from app.api.schemas import RoleEnum
+
 from app.core.dependencies import CurrentUser
+from app.models.user import RoleEnum
+
 
 
 class RoleChecker:
@@ -44,3 +46,6 @@ class RoleChecker:
         return current_user
 
 
+admin_only = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.ADMIN]))]
+
+manager_or_admin = Annotated[Sequence[str],Depends(RoleChecker([RoleEnum.MANAGER, RoleEnum.ADMIN]))]

@@ -4,13 +4,9 @@
 
 import datetime
 from enum import StrEnum
-import os
-import sys
-
 from sqlalchemy import ForeignKey, String, DateTime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from app.db.session import Base
 
 class RoleEnum(StrEnum):

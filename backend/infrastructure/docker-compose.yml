@@ -105,12 +105,14 @@ services:
 
 
   auth-service:
+    environment:
+      - ${PYTHONPATH}
     build: ../services/auth-service
     ports:
       - "8001:8000"
     container_name: auth-service
     restart: unless-stopped
-    env_file: ../services/auth-service/.env
+    env_file: ../services/auth-service/app/core/.env
     depends_on:
       postgres:
         condition: service_healthy

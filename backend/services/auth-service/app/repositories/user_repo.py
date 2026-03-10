@@ -1,10 +1,14 @@
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
+from starlette import status
 
 from app.repositories.base_dao import BaseDAO
 from app.models.user import User, Profile, RoleEnum
+from app.api.schemas import UserRegisterSchema
+from app.core.security import hash_password
 
 
 class UserDAO(BaseDAO):
@@ -15,14 +19,14 @@ class UserDAO(BaseDAO):
     async def add_user_with_profile(
         cls,
         session: AsyncSession,
-        user_data: dict,
+        user_data: UserRegisterSchema,
     ) -> User:
         """
         Добавляет пользователя и привязанный к нему профиль.
 
         Аргументы:
         - session: AsyncSession - асинхронная сессия базы данных
-        - user_data: dict - словарь с данными пользователя и профиля
+        - user_data: UserRegisterSchema - объект класса с данными пользователя и профиля
 
         Возвращает:
         - User - объект пользователя
@@ -30,20 +34,28 @@ class UserDAO(BaseDAO):
         """
 
         user = cls.model(
-            email=user_data['email'],
-            hashed_password=user_data['hashed_password'],
+            email=user_data.email,
+            hashed_password=hash_password(user_data),
         )
-        session.add(user)
+        try:
+            session.add(user)
+        except IntegrityError as e:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail= 'Пользователь с такой почтой уже зарегистрирован'
+            )
+            
 
         try:
             await session.flush()  # получаем user.id без коммита
 
             profile = Profile(
                 user_id=user.id,
-                username=user_data['username'],
-                date_of_birth=user_data['date_of_birth'],
-                first_name=user_data['first_name'],
-                last_name=user_data.get('last_name'),
+                username=user_data.username,
+                date_of_birth=user_data.date_of_birth,
+                first_name=user_data.first_name,
+                last_name=user_data.last_name,
             )
             session.add(profile)
             await session.commit()
