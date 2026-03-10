@@ -10,7 +10,7 @@ from app.repositories.user_repo import UserDAO
 
 
 async def get_current_user(
-    token: str | None = Cookie(default=None, alias="access")
+    token: str | None = Cookie(default=None, alias="access_token")
 ) -> TokenData:
     """
     Извлекает и валидирует JWT access токен из cookie.

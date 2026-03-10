@@ -159,7 +159,11 @@ class Token:
         return f"user_sessions:{user_id}"
         
    
-    async def save_refresh_token_in_redis(self, user: User, session: Redis):
+    async def save_refresh_token_in_redis(
+            self, 
+            user: User, 
+            session: Redis, 
+            ):
         """
 
         Cохраняет закодированный refresh токен
@@ -175,7 +179,7 @@ class Token:
             
             try:
                 pipe.setex(
-                    self.encode_refresh_token(user),
+                    self.refresh_token,
                     self.REFRESH_TTL,
                     str(user.id),
                     )

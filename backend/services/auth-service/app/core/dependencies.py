@@ -8,7 +8,7 @@ from app.services.user_service import get_current_user
 
 from fastapi import Depends
 from typing import Annotated
-from redis import Redis
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import auth
+from app.api import auth_api, profile_api, user_api
 
 app = FastAPI(
     title="API регистрации и авторизации",
@@ -8,7 +8,9 @@ app = FastAPI(
     openapi_prefix='/auth-service',
 )
 
-app.include_router(router=auth.router)
+app.include_router(router=auth_api.router)
+app.include_router(router=profile_api.router)
+app.include_router(router=user_api.router)
 
 @app.get("/health")
 async def health():

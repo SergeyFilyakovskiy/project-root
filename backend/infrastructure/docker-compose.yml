@@ -105,6 +105,7 @@ services:
 
 
   auth-service:
+    user: root
     environment:
       - ${PYTHONPATH}
     build: ../services/auth-service

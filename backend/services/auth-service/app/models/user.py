@@ -2,7 +2,7 @@
     Module with models for DB
 """
 
-import datetime
+from datetime import date
 from enum import StrEnum
 from sqlalchemy import ForeignKey, String, DateTime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
@@ -30,7 +30,7 @@ class Profile(Base):
         nullable=False,
     )
 
-    first_name: Mapped[str] = mapped_column(
+    first_name: Mapped[str | None] = mapped_column(
         String
     )
 
@@ -38,7 +38,7 @@ class Profile(Base):
         String
     )
 
-    date_of_birth: Mapped[datetime] = mapped_column( # type: ignore
+    date_of_birth: Mapped[date] = mapped_column( # type: ignore
         DateTime, 
         nullable=False,
     )
