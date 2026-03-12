@@ -2,6 +2,9 @@ from fastapi import Cookie, HTTPException
 from redis.asyncio import Redis
 from starlette import status
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Annotated
 
 from app.api.schemas import TokenData, UserLoginSchema
 from app.core.security import Token, verify_password
@@ -34,14 +37,14 @@ async def get_current_user(
 
 
 async def authenticate_user(
-    login_details: UserLoginSchema,
+    login_details: Annotated[OAuth2PasswordRequestForm, Depends()],
     postgres_session: AsyncSession,
 ) -> User | None:
     """
     Аутентифицирует пользователя по email и паролю.
 
     Аргументы:
-    - login_details: UserLoginSchema - email и пароль пользователя
+    - login_details: OAuth2PasswordRequestForm - username(email) и пароль пользователя
     - session: AsyncSession - асинхронная сессия базы данных
 
     Возвращает:
@@ -49,7 +52,7 @@ async def authenticate_user(
     - None если пользователь не найден или пароль неверный
 
     """
-    user = await UserDAO.find_by_email(session=postgres_session, email=login_details.email)
+    user = await UserDAO.find_by_email(session=postgres_session, email=login_details.username)
 
     if user is None:
         return None

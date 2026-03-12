@@ -5,7 +5,7 @@
 
 """
 
-from app.api.schemas import UserRegisterSchema, TokenSchema, TokenData
+from app.api.schemas import TokenSchema, TokenData
 from app.models.user import User
 from app.core.config import jwt_config
 
@@ -13,7 +13,6 @@ from app.core.config import jwt_config
 from passlib.context import CryptContext
 from datetime import timedelta, datetime, timezone
 from fastapi import HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from redis.asyncio import Redis
 from starlette import status
@@ -22,9 +21,7 @@ bcrypt_context = CryptContext(
     schemes=['bcrypt'],
 )
 
-oauth2_bearer = OAuth2PasswordBearer(
-    tokenUrl='auth/token',
-)
+
 
 def verify_password(password: str, user: User) -> bool:
     """
@@ -42,20 +39,19 @@ def verify_password(password: str, user: User) -> bool:
     """
     return bcrypt_context.verify(password, user.hashed_password)
 
-def hash_password(user: UserRegisterSchema) -> str:
+def hash_password(password: str) -> str:
     """
     
     Хеширует пароль для записи в БД
 
     Аргументы:
-    - user: CreateUserRequest - объект класса запроса на создание 
-    пользователя
+    - password: str - пароль для хеширования
 
     Возвращает:
     - str - захешированный пароль
 
     """
-    return bcrypt_context.hash(user.password)
+    return bcrypt_context.hash(password)
 
 class Token:
 
@@ -141,7 +137,7 @@ class Token:
          Декодирует токены
 
          Аргументы:
-         - token: TokenSchema - Токен для расшифровки
+         - token: str - Токен для расшифровки
 
           Возвращает:
           - dict - Словарь содержащий полезную нагрузку
@@ -173,27 +169,8 @@ class Token:
         - user: User - Данные о пользователе
 
         """
-        
-
-        async with session.pipeline(transaction=True) as pipe:
-            
-            try:
-                pipe.setex(
-                    self.refresh_token,
-                    self.REFRESH_TTL,
-                    str(user.id),
-                    )
-                pipe.sadd(
-                    self.user_sessions_key(user.id),
-                    self.refresh_token
-                )
-                pipe.expire(
-                    self.user_sessions_key(user.id),
-                    self.REFRESH_TTL
-                )
-                await pipe.execute()
-            except Exception as e:
-                raise e
+        key = f"refresh:{self.refresh_token}"
+        await session.setex(key, self.REFRESH_TTL, str(user.id))
     
     @classmethod
     async def revoke(cls, token: TokenSchema, session: Redis):
@@ -204,20 +181,8 @@ class Token:
         - token: TokenSchema - Токен для отзыва
 
         """
-        payload = cls.decode_token(token.token)
-        user_id = payload.get("sub")
-
-        async with session.pipeline(transaction=True) as pipe:
-            try:
-                pipe.delete(f"{token.token_type}:{token.token}")
-                if user_id:
-                    pipe.srem(
-                        cls.user_sessions_key(user_id),
-                        token.token
-                    )
-                await pipe.execute()
-            except Exception as e:
-                raise e
+        key = f"{token.token_type}:{token.token}"
+        await session.delete(key)
 
 
     @classmethod
@@ -232,12 +197,11 @@ class Token:
         - bool - True если токен валиден
 
         """
-        result = await session.exists(
-            f"{token.token_type}:{token.token}"
-        )
+        key = f"{token.token_type}:{token.token}"
+        result = await session.exists(key)
         return bool(result)
 
-    
+
     @classmethod
     async def get_user_id_by_token(
         cls, token: TokenSchema, session: Redis
@@ -252,9 +216,8 @@ class Token:
         - int | None - ID пользователя или None
 
         """
-        value = await session.get(
-            f"{token.token_type}:{token.token}"
-        )
+        key = f"{token.token_type}:{token.token}"
+        value = await session.get(key)
         return int(value) if value else None
 
     @classmethod

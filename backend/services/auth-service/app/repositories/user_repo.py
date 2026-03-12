@@ -35,7 +35,7 @@ class UserDAO(BaseDAO):
 
         user = cls.model(
             email=user_data.email,
-            hashed_password=hash_password(user_data),
+            hashed_password=hash_password(user_data.password),
         )
         try:
             session.add(user)
@@ -118,7 +118,7 @@ class UserDAO(BaseDAO):
         cls,
         session: AsyncSession,
         user_id: int,
-        role: RoleEnum,
+        role: str,
     ) -> User | None:
         """
         Обновляет роль пользователя.

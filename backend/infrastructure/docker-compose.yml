@@ -22,6 +22,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     container_name: redis
     restart: unless-stopped
     volumes:

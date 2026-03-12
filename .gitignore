@@ -8,3 +8,5 @@ tests/
 .env.*
 *.md
 uv.lock
+*.mako
+.vscode

@@ -7,6 +7,7 @@ from app.api.schemas import TokenSchema
 from app.core.security import Token
 from app.repositories.user_repo import UserDAO
 
+
 async def refresh_access_token(
     refresh_token: str,
     redis_session: Redis,

@@ -4,14 +4,11 @@
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.user import RoleEnum
 
 
-class TokenTypeEnum(str):
-    ACCESS = 'access'
-    REFRESH = 'refresh'
 
 
 # ========================
@@ -193,7 +190,7 @@ class UserResponseSchema(BaseModel):
     profile: ProfileResponseSchema
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdateRoleSchema(BaseModel):
@@ -207,7 +204,7 @@ class UserUpdateRoleSchema(BaseModel):
     """
 
     user_id: int
-    role: str
+    role: RoleEnum
 
 
 class UserChangePasswordSchema(BaseModel):
@@ -222,3 +219,18 @@ class UserChangePasswordSchema(BaseModel):
 
     old_password: str = Field(min_length=8, max_length=50)
     new_password: str = Field(min_length=8, max_length=50)
+
+class UserUpdateSchema(BaseModel):
+    """
+    Схема для обновления данных пользователя.
+    Все поля опциональны — передавай только те, что нужно изменить.
+
+    Attributes:
+        username: Новое имя пользователя. Если None — не обновляется.
+        email: Новая электронная почта. Если None — не обновляется.
+        password: Новый пароль в открытом виде (хэшируется на уровне сервиса). Если None — не обновляется.
+    """
+
+    username: str | None = None
+    email: str | None = None
+    password: str | None = None
