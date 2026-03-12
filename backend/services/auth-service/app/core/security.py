@@ -78,7 +78,7 @@ class Token:
 
         payload = {
             'sub': user.email,
-            'id': user.id,
+            'id': str(user.id),
             'role': user.role,
             'type': 'access',
             'exp': expires,
@@ -112,7 +112,7 @@ class Token:
             + timedelta(days=jwt_config.jwt_refresh_expire)
 
         payload = {
-            'sub': user.id,
+            'sub': str(user.id),
             'type': 'refresh',
             'exp': expires,
         }

@@ -147,17 +147,17 @@ async def refresh_access_token(
     Returns:
         JSONResponse: Сообщение об успехе с новым access токеном в куке.
     """
+
+    token_schema = TokenSchema(token= refresh_token, token_type='refresh')
     
-    token = TokenSchema(token= refresh_token, token_type='refresh')
-    
-    if not await Token.is_valid(token, redis_connection):
+    if not await Token.is_valid(token_schema, redis_connection):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Your token is not valid'
         )
     
-    user_data = Token.decode_token(refresh_token)
-    user = await UserDAO.find_by_id(session=postgres_connection, id=user_data['sub'])
+    user_data = Token.decode_token(token_schema.token)
+    user = await UserDAO.find_by_id(session=postgres_connection, id=int(user_data['sub']))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -175,3 +175,22 @@ async def refresh_access_token(
     )
     
     return response
+
+
+@router.get("/verify", status_code=status.HTTP_200_OK)
+async def verify_token(current_user: CurrentUser):
+    """
+    Верифицировать access токен и вернуть данные пользователя.
+    Используется api-gateway для проверки каждого запроса.
+
+    Args:
+        current_user: Текущий авторизованный пользователь из токена.
+
+    Returns:
+        dict: id, email и role пользователя.
+    """
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+    }

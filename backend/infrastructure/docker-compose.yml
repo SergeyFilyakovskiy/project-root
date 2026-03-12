@@ -111,8 +111,8 @@ services:
     environment:
       - ${PYTHONPATH}
     build: ../services/auth-service
-    ports:
-      - "8001:8000"
+    expose:
+      - "8000"
     container_name: auth-service
     restart: unless-stopped
     env_file: ../services/auth-service/app/core/.env
@@ -123,6 +123,8 @@ services:
       - app-network
 
   api-gateway:
+     expose:
+       - "8000"
      build: ../services/api-gateway
      container_name: api-gateway
      restart: unless-stopped
@@ -130,6 +132,8 @@ services:
      depends_on:
        redis:
          condition: service_healthy
+       auth-service:
+        condition: service_started
      networks:
        - app-network
 
