@@ -4,6 +4,8 @@ from sqlalchemy import JSON, Boolean, Integer, String, func, DateTime
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
+from app.db.types import EncryptedString
+
 class Base(AsyncAttrs, DeclarativeBase):
    
     """
@@ -59,12 +61,12 @@ class Integration(Base):
         )
 
     access_token: Mapped[str | None] = mapped_column(
-        String(2048), 
+        EncryptedString, 
         nullable=True
         )
     
     refresh_token: Mapped[str | None] = mapped_column(
-        String(2048), 
+        EncryptedString, 
         nullable=True
         )
     token_expires_at: Mapped[datetime | None] = mapped_column(

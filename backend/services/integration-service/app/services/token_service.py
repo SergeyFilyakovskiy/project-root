@@ -60,7 +60,7 @@ class TokenService:
                 "https://oauth2.googleapis.com/token",
                 data={
                     "client_id": settings.google_client_id,
-                    "client_secret": settings.google_client_secret,
+                    "client_secret": settings.google_client_secret.get_secret_value(),
                     "refresh_token": refresh_token,
                     "grant_type": "refresh_token",
                 },
@@ -80,7 +80,7 @@ class TokenService:
                 "https://oauth.yandex.ru/token",
                 data={
                     "client_id": settings.yandex_client_id,
-                    "client_secret": settings.yandex_client_secret,
+                    "client_secret": settings.yandex_client_secret.get_secret_value(),
                     "refresh_token": refresh_token,
                     "grant_type": "refresh_token",
                 },
@@ -101,7 +101,7 @@ class TokenService:
                 "https://graph.facebook.com/oauth/access_token",
                 params={
                     "client_id": settings.meta_client_id,
-                    "client_secret": settings.meta_client_secret,
+                    "client_secret": settings.meta_client_secret.get_secret_value(),
                     "grant_type": "fb_exchange_token",
                     "fb_exchange_token": refresh_token,
                 },

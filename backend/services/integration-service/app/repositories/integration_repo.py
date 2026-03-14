@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -86,7 +87,7 @@ class IntegrationRepo:
         integration_id: uuid.UUID,
         access_token: str,
         refresh_token: str | None,
-        token_expires_at,
+        token_expires_at: datetime,
     ) -> None:
         await self.session.execute(
             update(Integration)
