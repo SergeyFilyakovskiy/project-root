@@ -18,7 +18,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         token = request.cookies.get("access_token")
         if not token:
-            logger.warning(f"No token from {request.client.host} → {request.url.path}") # type: ignore
+            logger.warning(f"No token from {request.client.host} : {request.url.path}") # type: ignore
             return JSONResponse({"detail": "Not authenticated"}, status_code=401)
 
         try:

@@ -50,5 +50,5 @@ async def get_redis_connection():
         except Exception as e:
             raise e
         finally:
-            await session.close()
+            await session.aclose()
 

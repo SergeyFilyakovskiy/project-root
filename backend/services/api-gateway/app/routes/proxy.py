@@ -6,22 +6,20 @@ from app.core.config import settings
 router = APIRouter()
 
 ROUTES = {
-
-    "/auth": settings.auth_service_url,
-    "/analytics": settings.analytics_service_url,
-    "/integration": settings.integration_service_url,
+    "auth-service": settings.auth_service_url,
+    "analytics-service": settings.analytics_service_url,
+    "integration-service": settings.integration_service_url,
 }
 
 @router.api_route("/{service}", methods=["GET", "POST", "PATCH", "DELETE"])
 @router.api_route("/{service}/{path:path}", methods=["GET", "POST", "PATCH", "DELETE"])
 async def proxy(request: Request, service: str, path: str):
-    prefix = f"/{service}"
-    base_url = ROUTES.get(prefix)
+    base_url = ROUTES.get(service)
 
     if base_url is None:
         return Response(content="Service not found", status_code=404)
 
-    url = f"{base_url}/{service}/{path}"
+    url = f"{base_url}/{service}/{path}" if path else f"{base_url}/{service}"
 
     async with httpx.AsyncClient() as client:
         response = await client.request(

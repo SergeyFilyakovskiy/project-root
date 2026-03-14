@@ -17,19 +17,19 @@ class Settings(BaseSettings):
     )
 
     #Настройки для google
-    google_client_id: str = Field(validation_alias='GOOGLE_CLIENT_ID')
-    google_client_secret: SecretStr = Field(validation_alias='GOOGLE_CLIENT_SECRET')
-    google_redirect_uri: str = Field(validation_alias='')
+    google_client_id: str = Field(validation_alias='google_client_id')
+    google_client_secret: SecretStr = Field(validation_alias='google_client_secret')
+    google_redirect_uri: str = Field(validation_alias='redirect_uri')
 
     #Настройки для yandex
-    yandex_client_id: str = Field(validation_alias='YANDEX_CLIENT_ID')
-    yandex_client_secret: SecretStr = Field(validation_alias='YANDEX_CLIENT_SECRET')
-    yandex_redirect_uri: str = Field(validation_alias='')
+    yandex_client_id: str = Field(validation_alias='yandex_client_id')
+    yandex_client_secret: SecretStr = Field(validation_alias='yandex_client_secret')
+    yandex_redirect_uri: str = Field(validation_alias='redirect_uri')
 
     #Настройки для meta 
-    meta_client_id: str = Field(validation_alias='META_CLIENT_ID')
-    meta_client_secret: SecretStr = Field(validation_alias='META_CLIENT_SECRET')
-    met_redirect_uri: str = Field(validation_alias='')
+    # meta_client_id: str = Field(validation_alias='META_CLIENT_ID')
+    # meta_client_secret: SecretStr = Field(validation_alias='META_CLIENT_SECRET')
+    # met_redirect_uri: str = Field(validation_alias='redirect_uri')
 
     #Настройки Postgres
     postgres_user: str = Field(validation_alias='postgres_user')

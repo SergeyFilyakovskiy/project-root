@@ -137,18 +137,20 @@ services:
      networks:
        - app-network
 
-  # integration-service:
-  #   build: ../services/integration-service
-  #   container_name: integration-service
-  #   restart: unless-stopped
-  #   env_file: ../services/integration-service/.env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  integration-service:
+     build: ../services/integration-service
+     container_name: integration-service
+     restart: unless-stopped
+     env_file: ../services/integration-service/app/core/.env
+     depends_on:
+       postgres:
+         condition: service_healthy
+       rabbitmq:
+         condition: service_healthy
+       redis:
+        condition: service_healthy
+     networks:
+       - app-network
 
   # sync-worker:
   #   build: ../services/sync-worker

@@ -11,13 +11,13 @@ from app.api.schemas import (
 from app.repositories.integration_repo import IntegrationRepo
 from app.services.integration_service import IntegrationService
 from app.services.token_service import TokenService
-from app.core.dependencies import get_current_user_id, redis_dependency, postgres_dependency
+from app.core.dependencies import user_dependency, redis_dependency, postgres_dependency
 from app.api.schemas import PlatformEnum
 from app.core.config import settings
 import httpx
 from datetime import datetime, timezone, timedelta
 
-router = APIRouter(prefix="/integration-service", tags=["integrations"])
+router = APIRouter(prefix="/integrations", tags=["integrations"])
 
 OAUTH_URLS = {
     PlatformEnum.GOOGLE_ADS: "https://accounts.google.com/o/oauth2/auth",
@@ -42,28 +42,28 @@ def get_token_service(session: postgres_dependency) -> TokenService:
 
 # --- CRUD ---
 
-@router.post("/integrations", response_model=IntegrationResponse, status_code=201)
+@router.post("/", response_model=IntegrationResponse, status_code=201)
 async def create_integration(
     data: IntegrationCreate,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
 ):
     return await service.create(user_id, data)
 
 
-@router.get("/integrations", response_model=IntegrationListResponse)
+@router.get("/", response_model=IntegrationListResponse)
 async def list_integrations(
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
 ):
     items = await service.get_all(user_id)
     return IntegrationListResponse(items=items, total=len(items))
 
 
-@router.get("/integrations/{integration_id}", response_model=IntegrationResponse)
+@router.get("/{integration_id}", response_model=IntegrationResponse)
 async def get_integration(
     integration_id: uuid.UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
 ):
     try:
@@ -72,11 +72,11 @@ async def get_integration(
         raise HTTPException(404, "Integration not found")
 
 
-@router.patch("/integrations/{integration_id}", response_model=IntegrationResponse)
+@router.patch("/{integration_id}", response_model=IntegrationResponse)
 async def update_integration(
     integration_id: uuid.UUID,
     data: IntegrationUpdate,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
 ):
     try:
@@ -85,10 +85,10 @@ async def update_integration(
         raise HTTPException(404, "Integration not found")
 
 
-@router.delete("/integrations/{integration_id}", status_code=204)
+@router.delete("/{integration_id}", status_code=204)
 async def delete_integration(
     integration_id: uuid.UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
 ):
     try:
@@ -99,18 +99,18 @@ async def delete_integration(
 
 # --- OAuth ---
 
-@router.get("/integrations/{integration_id}/oauth/init", response_model=OAuthInitResponse)
+@router.get("/{integration_id}/oauth/init", response_model=OAuthInitResponse)
 async def oauth_init(
     integration_id: uuid.UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
+    redis_connection: redis_dependency,
     service: IntegrationService = Depends(get_service),
-    redis: redis_dependency,
 ):
     integration = await service.get_by_id(integration_id, user_id)
     platform = PlatformEnum(integration.platform)
 
     state = f"{integration_id}:{int(time.time())}"
-    await redis.set(f"oauth_state:{state}", str(integration_id), ex=600)
+    await redis_connection.set(f"oauth_state:{state}", str(integration_id), ex=600)
 
     params = {
         "client_id": getattr(settings, f"{platform.value.split('_')[0]}_client_id"),
@@ -153,10 +153,10 @@ async def oauth_callback(
     return {"status": "ok", "integration_id": str(integration_id)}
 
 
-@router.get("/integrations/{integration_id}/token/status", response_model=TokenStatusResponse)
+@router.get("/{integration_id}/token/status", response_model=TokenStatusResponse)
 async def token_status(
     integration_id: uuid.UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: user_dependency,
     service: IntegrationService = Depends(get_service),
     token_service: TokenService = Depends(get_token_service),
 ):
