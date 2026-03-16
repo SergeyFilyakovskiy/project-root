@@ -41,11 +41,23 @@ class Settings(BaseSettings):
     #Настройки типов
     db_encryption_key: SecretStr = Field(validation_alias='db_encryption_key')
 
+    #Redis
     redis_password: SecretStr = Field(validation_alias='redis_password')
     redis_host: str = Field(validation_alias='redis_host')
     redis_port: int = Field(validation_alias='redis_port')
     redis_db: str = Field(validation_alias='redis_db')
 
+    #RabbitMQ
+    sync_request_queue: str = "sync.request"
+    sync_response_queue: str = "sync.response"
+    rabbitmq_user: str = Field(validation_alias='rabbitmq_user')
+    rabbitmq_password: SecretStr = Field(validation_alias='rabbitmq_password')
+    rabbitmq_host: str = Field(validation_alias='rabbitmq_host')
+    rabbitmq_port: int = Field(validation_alias='rabbitmq_port')
+
+    def get_rabbitmq_url(self) -> str:
+        return f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password.get_secret_value()}@"\
+            f"{self.rabbitmq_host}:{self.rabbitmq_port}/"
     def get_redis_url(self):
         return f"redis://:{self.redis_password.get_secret_value()}"\
         f"@{self.redis_host}:{self.redis_port}/{self.redis_db}"

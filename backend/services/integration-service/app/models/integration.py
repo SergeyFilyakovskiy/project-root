@@ -61,12 +61,12 @@ class Integration(Base):
         )
 
     access_token: Mapped[str | None] = mapped_column(
-        EncryptedString, 
+        EncryptedString(length=2048), 
         nullable=True
         )
     
     refresh_token: Mapped[str | None] = mapped_column(
-        EncryptedString, 
+        EncryptedString(length=2048), 
         nullable=True
         )
     token_expires_at: Mapped[datetime | None] = mapped_column(

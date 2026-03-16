@@ -94,23 +94,23 @@ class TokenService:
             "expires_at": datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"]),
         }
 
-    async def _refresh_meta(self, refresh_token: str, config: dict) -> dict:
+    # async def _refresh_meta(self, refresh_token: str, config: dict) -> dict:
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://graph.facebook.com/oauth/access_token",
-                params={
-                    "client_id": settings.meta_client_id,
-                    "client_secret": settings.meta_client_secret.get_secret_value(),
-                    "grant_type": "fb_exchange_token",
-                    "fb_exchange_token": refresh_token,
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
+    #     async with httpx.AsyncClient() as client:
+    #         response = await client.get(
+    #             "https://graph.facebook.com/oauth/access_token",
+    #             params={
+    #                 "client_id": settings.meta_client_id,
+    #                 "client_secret": settings.meta_client_secret.get_secret_value(),
+    #                 "grant_type": "fb_exchange_token",
+    #                 "fb_exchange_token": refresh_token,
+    #             },
+    #         )
+    #         response.raise_for_status()
+    #         data = response.json()
 
-        return {
-            "access_token": data["access_token"],
-            "refresh_token": data["access_token"], 
-            "expires_at": datetime.now(timezone.utc) + timedelta(days=60),
-        }
+    #     return {
+    #         "access_token": data["access_token"],
+    #         "refresh_token": data["access_token"], 
+    #         "expires_at": datetime.now(timezone.utc) + timedelta(days=60),
+    #     }

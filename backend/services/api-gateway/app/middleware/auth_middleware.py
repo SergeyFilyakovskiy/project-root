@@ -16,8 +16,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if any(request.url.path.startswith(p) for p in settings.public_paths):
             return await call_next(request)
 
-        token = request.cookies.get("access_token")
-        if not token:
+        access_token = request.cookies.get("access_token")
+        refresh_token = request.cookies.get("refresh_token")
+        if access_token is None or refresh_token is None:
             logger.warning(f"No token from {request.client.host} : {request.url.path}") # type: ignore
             return JSONResponse({"detail": "Not authenticated"}, status_code=401)
 
@@ -25,7 +26,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             async with httpx.AsyncClient(timeout=5.0) as client:
                 resp = await client.get(
                     f"{settings.auth_service_url}/auth/verify",
-                    cookies={"access_token": token},
+                    cookies={"access_token": access_token},
                 )
 
             if resp.status_code == 401:

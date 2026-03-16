@@ -10,10 +10,11 @@ ROUTES = {
     "analytics-service": settings.analytics_service_url,
     "integration-service": settings.integration_service_url,
 }
+SKIP_HEADERS = {"content-encoding", "transfer-encoding", "content-length"}
 
 @router.api_route("/{service}", methods=["GET", "POST", "PATCH", "DELETE"])
 @router.api_route("/{service}/{path:path}", methods=["GET", "POST", "PATCH", "DELETE"])
-async def proxy(request: Request, service: str, path: str):
+async def proxy(request: Request, service: str, path: str = ""):
     base_url = ROUTES.get(service)
 
     if base_url is None:
@@ -22,7 +23,7 @@ async def proxy(request: Request, service: str, path: str):
     url = f"{base_url}/{service}/{path}" if path else f"{base_url}/{service}"
 
     async with httpx.AsyncClient() as client:
-        response = await client.request(
+        upstream = await client.request(
             method=request.method,
             url=url,
             headers=dict(request.headers),
@@ -31,8 +32,13 @@ async def proxy(request: Request, service: str, path: str):
             params=request.query_params,
         )
 
-    return Response(
-        content=response.content,
-        status_code=response.status_code,
-        headers=dict(response.headers),
+    response = Response(
+        content=upstream.content,
+        status_code=upstream.status_code,
     )
+
+    for name, value in upstream.headers.multi_items():
+        if name.lower() not in SKIP_HEADERS:
+            response.headers.append(name, value)
+
+    return response

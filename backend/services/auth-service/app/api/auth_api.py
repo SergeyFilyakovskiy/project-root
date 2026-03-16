@@ -166,6 +166,10 @@ async def refresh_access_token(
     
     token = Token()
     token.encode_access_token(user)
+    token.encode_refresh_token(user)
+
+    await token.revoke(token_schema, redis_connection)
+    await token.save_refresh_token_in_redis(user, redis_connection)
     response = JSONResponse({'detail': 'new access token created'})
     response.set_cookie(
         key='access_token',
@@ -173,7 +177,13 @@ async def refresh_access_token(
         httponly=True,
         path='/'
     )
-    
+    response.set_cookie(
+    key='refresh_token',
+    value=token.refresh_token,
+    httponly=True,
+    path='/'
+    )
+
     return response
 
 

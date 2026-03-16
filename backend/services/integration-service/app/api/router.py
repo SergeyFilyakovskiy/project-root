@@ -186,12 +186,14 @@ async def _exchange_code(code: str, platform: PlatformEnum) -> dict:
             token_urls[platform],
             data={
                 "client_id": getattr(settings, f"{platform_key}_client_id"),
-                "client_secret": getattr(settings, f"{platform_key}_client_secret"),
+                "client_secret": getattr(settings, f"{platform_key}_client_secret").get_secret_value(),
                 "redirect_uri": getattr(settings, f"{platform_key}_redirect_uri"),
                 "code": code,
                 "grant_type": "authorization_code",
             },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
+        print("Google response:", response.status_code, response.text)
         response.raise_for_status()
         data = response.json()
 
