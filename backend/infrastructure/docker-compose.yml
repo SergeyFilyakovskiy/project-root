@@ -152,18 +152,18 @@ services:
      networks:
        - app-network
 
-  # sync-worker:
-  #   build: ../services/sync-worker
-  #   container_name: sync-worker
-  #   restart: unless-stopped
-  #   env_file: ../services/sync-worker/.env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  sync-worker:
+     build: ../services/sync-worker
+     container_name: sync-worker
+     restart: unless-stopped
+     env_file: ../services/sync-worker/app/core/.env
+     depends_on:
+       postgres:
+         condition: service_healthy
+       rabbitmq:
+         condition: service_healthy
+     networks:
+       - app-network
 
   # normalization-service:
   #   build: ../services/normalization-service
@@ -232,24 +232,24 @@ services:
   #   networks:
   #     - app-network
 
-  # scheduler-service:
-  #   build: ../services/scheduler-service
-  #   container_name: scheduler-service
-  #   restart: unless-stopped
-  #   env_file: ../services/scheduler-service/.env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  scheduler-service:
+    build: ../services/scheduler-service
+    container_name: scheduler-service
+    restart: unless-stopped
+    env_file: ../services/scheduler-service/app/core/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
 
 networks:       
   app-network:
     driver: bridge
 
-volumes:           # ← вот сюда, в самый конец, без отступа
+volumes:
   redis_data:
   postgres_data:
   clickhouse_data:

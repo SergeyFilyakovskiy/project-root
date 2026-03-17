@@ -2,6 +2,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, Header, HTTPException
 from typing import Annotated
+from app.core.config import settings
 
 
 from app.db.session import get_postgres_connection, get_redis_connection
@@ -20,3 +21,6 @@ async def get_current_user_id(x_user_id: int = Header(None)) -> int:
 user_dependency = Annotated[int, Depends(get_current_user_id)]
 
 
+async def verify_service_key(x_service_key: str | None = Header(default=None)):
+    if x_service_key != settings.service_key.get_secret_value():
+        raise HTTPException(status_code=403, detail="Forbidden: invalid service key")

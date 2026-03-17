@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy import String, Text, func, DateTime, UUID, Enum
+from sqlalchemy import JSON, String, Text, func, DateTime, UUID, Enum
 
 from app.messaging.schemas import SyncStatus
 
@@ -73,4 +73,8 @@ class SyncJob(Base):
         nullable=True
     )
     
+    raw_data: Mapped[dict|None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
 

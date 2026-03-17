@@ -24,13 +24,16 @@ class IntegrationService:
 
     async def get_all(self, user_id: int) -> list[Integration]:
         return await self.repo.get_by_user(user_id)
-
+    
+    async def get_all_active(self)-> list[Integration]:
+        return await self.repo.get_all_active()
+    
     async def update(
         self,
         integration_id: uuid.UUID,
         user_id: int,
         data: IntegrationUpdate,
-    ) -> Integration:
+    ) -> Integration | None:
         integration = await self.get_by_id(integration_id, user_id)
         update_data = data.model_dump(exclude_none=True)
         if not update_data:

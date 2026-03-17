@@ -9,6 +9,7 @@ ROUTES = {
     "auth-service": settings.auth_service_url,
     "analytics-service": settings.analytics_service_url,
     "integration-service": settings.integration_service_url,
+    "scheduler-service": settings.scheduler_service_url,
 }
 SKIP_HEADERS = {"content-encoding", "transfer-encoding", "content-length"}
 

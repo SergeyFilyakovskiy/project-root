@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     rabbitmq_host: str = Field(validation_alias='rabbitmq_host')
     rabbitmq_port: int = Field(validation_alias='rabbitmq_port')
 
+    service_key: SecretStr = Field(validation_alias='service_key')
+
     def get_rabbitmq_url(self) -> str:
         return f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password.get_secret_value()}@"\
             f"{self.rabbitmq_host}:{self.rabbitmq_port}/"

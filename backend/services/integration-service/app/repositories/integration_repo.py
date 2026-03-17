@@ -105,3 +105,13 @@ class IntegrationRepo:
         if integration:
             await self.session.delete(integration)
             await self.session.commit()
+
+    async def get_all_active(self):
+        
+        result =  await self.session.execute(
+            select(Integration).where(Integration.is_active == True)
+        )
+
+        return list(result.scalars().all())
+
+    

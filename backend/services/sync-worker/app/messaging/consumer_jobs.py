@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 CONNECTORS: dict = {
     "google_ads": GoogleAdsConnector,
     "yandex_direct": YandexDirectConnector,
-}  # заполним когда напишем коннекторы
+}
 
 
 class JobsConsumer:
@@ -119,8 +119,8 @@ class JobsConsumer:
                 access_token=response.access_token,
                 config=response.platform_config,
             )
-            await connector.fetch(date_from=job.date_from, date_to=job.date_to)
-
+            data = await connector.fetch(date_from=job.date_from, date_to=job.date_to)
+            await repo.update_data(data, job.job_id)
             await repo.set_status(sync_job.id, SyncStatus.SUCCESS)
 
         except asyncio.TimeoutError:

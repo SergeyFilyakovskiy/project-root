@@ -11,7 +11,7 @@ from app.api.schemas import (
 from app.repositories.integration_repo import IntegrationRepo
 from app.services.integration_service import IntegrationService
 from app.services.token_service import TokenService
-from app.core.dependencies import user_dependency, redis_dependency, postgres_dependency
+from app.core.dependencies import user_dependency, redis_dependency, postgres_dependency, verify_service_key
 from app.api.schemas import PlatformEnum
 from app.core.config import settings
 import httpx
@@ -57,7 +57,7 @@ async def list_integrations(
     service: IntegrationService = Depends(get_service),
 ):
     items = await service.get_all(user_id)
-    return IntegrationListResponse(items=items, total=len(items))
+    return IntegrationListResponse(items=items, total=len(items)) # type: ignore
 
 
 @router.get("/{integration_id}", response_model=IntegrationResponse)
@@ -203,3 +203,10 @@ async def _exchange_code(code: str, platform: PlatformEnum) -> dict:
         "refresh_token": data.get("refresh_token"),
         "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
     }
+
+@router.get("/internal/", dependencies=[Depends(verify_service_key)])
+async def list_integrations_internal(
+    service: IntegrationService = Depends(get_service)
+):
+    items = await service.get_all_active()
+    return IntegrationListResponse(items=items, total=len(items)) # type: ignore

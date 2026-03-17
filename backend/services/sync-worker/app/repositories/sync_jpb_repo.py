@@ -64,3 +64,15 @@ class SyncJobRepo:
             select(SyncJob).where(SyncJob.status == SyncStatus.PENDING)
         )
         return list(result.scalars().all())
+
+    async def update_data(
+            self,
+            data: dict,
+            job_id: uuid.UUID
+            ):
+        await self.session.execute(
+            update(SyncJob)
+            .where(SyncJob.id == job_id)
+            .values(raw_data=data)
+        )
+        await self.session.commit()
