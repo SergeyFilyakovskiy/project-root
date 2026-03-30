@@ -5,9 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aio-pika>=9.6.2",
     "clickhouse-driver>=0.2.10",
     "fastapi>=0.135.2",
     "httpx>=0.28.1",
     "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
     "pytz>=2026.1.post1",
+    "redis>=7.4.0",
+    "sqlalchemy>=2.0.48",
 ]

@@ -9,4 +9,4 @@ def to_utc(date_str: str, source_tz: str = "UTC") -> str:
         utc_dt = tz.localize(local_dt).astimezone(pytz.utc)
         return utc_dt.strftime("%Y-%m-%d")
     except Exception:
-        return date_str  # если не можем конвертировать — оставляем как есть
+        return date_str

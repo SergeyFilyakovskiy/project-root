@@ -1,6 +1,6 @@
-from app.api.schemas import RawDataMessage, NormalizedMetric
+from app.messaging.schemas import RawDataMessage, NormalizedMetric
 
-def normalize(message: RawDataMessage) -> list[NormalizedMetric] | None:
+def normalize(message: RawDataMessage) -> list[NormalizedMetric]: # type: ignore
     platform = message.platform
     if platform == "google_ads":
         return _normalize_google(message)

@@ -63,10 +63,18 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:24
+    cap_add:
+      - SYS_NICE
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: "true"
     container_name: clickhouse
     restart: unless-stopped
     volumes:
         - clickhouse_data:/var/lib/clickhouse
+        - ./clickhouse:/docker-entrypoint-initdb.d
     ports:
         - "8123:8123"
     networks:
@@ -165,20 +173,20 @@ services:
      networks:
        - app-network
 
-  # normalization-service:
-  #   build: ../services/normalization-service
-  #   container_name: normalization-service
-  #   restart: unless-stopped
-  #   env_file: ../services/normalization-service/.env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     clickhouse:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  normalization-service:
+    build: ../services/normalization-service
+    container_name: normalization-service
+    restart: unless-stopped
+    env_file: ../services/normalization-service/app/core/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
 
   # analytics-service:
   #   build: ../services/analytics-service

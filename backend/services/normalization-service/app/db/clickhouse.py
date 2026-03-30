@@ -7,7 +7,7 @@ def get_clickhouse_client() -> Client:
         port=settings.clickhouse_port,
         database=settings.clickhouse_db,
         user=settings.clickhouse_user,
-        password=settings.clickhouse_password,
+        password=settings.clickhouse_password.get_secret_value(),
     )
 
 def ensure_table_exists():
