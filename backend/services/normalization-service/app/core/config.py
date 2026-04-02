@@ -17,9 +17,6 @@ class Config(BaseSettings):
     clickhouse_db: str = Field(validation_alias='clickhouse_db')
 
     #RabbitMQ
-    sync_request_queue: str = "sync.request"
-    sync_response_queue: str = "sync.response"
-    sync_jobs_queue: str = "sync.jobs"
     rabbitmq_user: str = Field(validation_alias='rabbitmq_user')
     rabbitmq_password: SecretStr = Field(validation_alias='rabbitmq_password')
     rabbitmq_host: str = Field(validation_alias='rabbitmq_host')
@@ -29,7 +26,7 @@ class Config(BaseSettings):
     redis_password: SecretStr = Field(validation_alias='redis_password')
     redis_host: str = Field(validation_alias='redis_host')
     redis_port: str = Field(validation_alias='redis_port')
-    redis_key: str = Field(validation_alias='redis_db')
+    redis_key: str = Field(validation_alias='redis_key')
     cache_ttl: int = Field(validation_alias='cache_ttl')
 
     def get_redis_url(self):

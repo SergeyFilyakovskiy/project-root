@@ -69,14 +69,17 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
       CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
       CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: "true"
     container_name: clickhouse
     restart: unless-stopped
     volumes:
         - clickhouse_data:/var/lib/clickhouse
         - ./clickhouse:/docker-entrypoint-initdb.d
+        - ./clickhouse/config.d:/etc/clickhouse-server/config.d
     ports:
         - "8123:8123"
+        - "9000:9000"
     networks:
         - app-network
     healthcheck:

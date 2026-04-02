@@ -44,7 +44,7 @@ def get_metrics(
     data, columns = rows, client.execute(
         f"SELECT * FROM facts_metrics {where} LIMIT 0", params, with_column_types=True
     )
-    # проще через named results:
+    
     results = client.execute(query, params, with_column_types=False)
     cols = [
         "date", "integration_id", "platform", "campaign_group",
