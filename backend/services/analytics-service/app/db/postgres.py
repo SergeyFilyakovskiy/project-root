@@ -1,6 +1,4 @@
-from sqlalchemy import Integer, func, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncAttrs
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.core.config import settings
 
 
