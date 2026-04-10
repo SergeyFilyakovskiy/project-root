@@ -94,10 +94,12 @@ services:
     restart: unless-stopped
     volumes:
       - ./nginx:/etc/nginx/conf.d:ro
+      - frontend_static:/usr/share/nginx/html:ro
     ports:
       - "80:80"
     depends_on:
       - api-gateway
+      - frontend
     networks:
       - app-network
 
@@ -256,11 +258,19 @@ services:
     networks:
       - app-network
 
+  frontend:
+    build: ../../frontend
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - app-network
+
 networks:       
   app-network:
     driver: bridge
 
 volumes:
+  frontend_static:
   redis_data:
   postgres_data:
   clickhouse_data:
