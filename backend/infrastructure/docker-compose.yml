@@ -191,18 +191,18 @@ services:
     networks:
       - app-network
 
-  # analytics-service:
-  #   build: ../services/analytics-service
-  #   container_name: analytics-service
-  #   restart: unless-stopped
-  #   env_file: ../services/analytics-service/.env
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  analytics-service:
+    build: ../services/analytics-service
+    container_name: analytics-service
+    restart: unless-stopped
+    env_file: ../services/analytics-service/app/core/.env
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
 
   # manual-input-service:
   #   build: ../services/manual-input-service
