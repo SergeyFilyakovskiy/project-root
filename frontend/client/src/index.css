@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AdMetrics dark-first analytics palette — derived from data/advertising domain */
+    /* Deep navy-slate surfaces, electric blue accent, high contrast data colors */
+
+    --background: 222 18% 10%;
+    --foreground: 215 20% 88%;
+
+    --card: 222 16% 12%;
+    --card-foreground: 215 20% 88%;
+
+    --popover: 222 16% 12%;
+    --popover-foreground: 215 20% 88%;
+
+    --primary: 213 85% 58%;
+    --primary-foreground: 222 18% 8%;
+
+    --secondary: 222 14% 18%;
+    --secondary-foreground: 215 20% 75%;
+
+    --muted: 222 14% 16%;
+    --muted-foreground: 215 12% 52%;
+
+    --accent: 213 85% 58%;
+    --accent-foreground: 222 18% 8%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 222 12% 20%;
+    --input: 222 12% 20%;
+    --ring: 213 85% 58%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 222 20% 8%;
+    --sidebar-foreground: 215 20% 75%;
+    --sidebar-primary: 213 85% 58%;
+    --sidebar-primary-foreground: 222 18% 8%;
+    --sidebar-accent: 222 14% 15%;
+    --sidebar-accent-foreground: 215 20% 88%;
+    --sidebar-border: 222 12% 16%;
+    --sidebar-ring: 213 85% 58%;
+
+    /* Chart colors for data viz */
+    --chart-1: 213 85% 58%;
+    --chart-2: 142 70% 45%;
+    --chart-3: 38 95% 58%;
+    --chart-4: 280 70% 65%;
+    --chart-5: 0 72% 55%;
+  }
+
+  /* Light mode override */
+  .light {
+    --background: 215 28% 97%;
+    --foreground: 222 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 14%;
+
+    --primary: 213 85% 44%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 215 20% 93%;
+    --secondary-foreground: 222 20% 25%;
+
+    --muted: 215 20% 93%;
+    --muted-foreground: 215 12% 48%;
+
+    --accent: 215 20% 93%;
+    --accent-foreground: 222 20% 14%;
+
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 16% 86%;
+    --input: 215 16% 86%;
+    --ring: 213 85% 44%;
+
+    --sidebar-background: 215 24% 94%;
+    --sidebar-foreground: 222 20% 30%;
+    --sidebar-primary: 213 85% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 16% 89%;
+    --sidebar-accent-foreground: 222 20% 14%;
+    --sidebar-border: 215 16% 86%;
+    --sidebar-ring: 213 85% 44%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'General Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
