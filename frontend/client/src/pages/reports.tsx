@@ -59,7 +59,7 @@ export default function Reports() {
         report_type: reportType,
         format: exportFormat,
       });
-      const res = await fetch(`/api/reports/export?${params}`, { credentials: "include" });
+      const res = await fetch(`/analytics-service/analytics/reports/export?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Ошибка генерации отчёта");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

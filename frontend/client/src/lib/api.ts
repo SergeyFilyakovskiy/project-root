@@ -1,11 +1,9 @@
-// API client that connects to the backend through api-gateway (nginx → port 80)
-// For dev: proxy configured in vite.config.ts to localhost:80
-// All cookies are sent automatically (httpOnly JWT tokens)
+// API client — все запросы идут через nginx → api-gateway
+// api-gateway маршрутизирует по первому сегменту пути: /{service}/{path}
+// Доступные сервисы: auth-service, analytics-service, integration-service, scheduler-service
 
-const API_BASE = "/api";
-
-export async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
+async function apiFetch(path: string, init?: RequestInit) {
+  const res = await fetch(path, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -21,64 +19,126 @@ export async function apiFetch(path: string, init?: RequestInit) {
   return res.json();
 }
 
-// Auth
+// ─── Auth ────────────────────────────────────────────────────────────────────
+// Публичные пути (без токена): /auth-service/auth/register, /login, /refresh
 export const authApi = {
   login: (username: string, password: string) =>
-    apiFetch("/auth/login", {
+    apiFetch("/auth-service/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ username, password }),
     }),
-  register: (data: { username: string; email: string; password: string; first_name?: string; last_name?: string }) =>
-    apiFetch("/auth/register", { method: "POST", body: JSON.stringify(data) }),
-  logout: () => apiFetch("/auth/logout", { method: "POST" }),
-  refresh: () => apiFetch("/auth/refresh", { method: "POST" }),
+
+  register: (data: {
+    username: string;
+    email: string;
+    password: string;
+    first_name?: string;
+    last_name?: string;
+  }) =>
+    apiFetch("/auth-service/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  logout: () =>
+    apiFetch("/auth-service/auth/logout", { method: "POST" }),
+
+  refresh: () =>
+    apiFetch("/auth-service/auth/refresh", { method: "POST" }),
 };
 
-// User / Profile
+// ─── User ─────────────────────────────────────────────────────────────────────
 export const userApi = {
-  me: () => apiFetch("/user/me"),
+  me: () => apiFetch("/auth-service/user/me"),
+
   updateMe: (data: { username?: string; email?: string }) =>
-    apiFetch("/user/me", { method: "PATCH", body: JSON.stringify(data) }),
-  deleteMe: () => apiFetch("/user/me", { method: "DELETE" }),
+    apiFetch("/auth-service/user/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  deleteMe: () =>
+    apiFetch("/auth-service/user/me", { method: "DELETE" }),
+
   changePassword: (old_password: string, new_password: string) =>
-    apiFetch("/user/me/password", { method: "PATCH", body: JSON.stringify({ old_password, new_password }) }),
-  profile: () => apiFetch("/profile/me"),
-  updateProfile: (data: object) =>
-    apiFetch("/profile/me", { method: "PATCH", body: JSON.stringify(data) }),
+    apiFetch("/auth-service/user/me/password", {
+      method: "PATCH",
+      body: JSON.stringify({ old_password, new_password }),
+    }),
 };
 
-// Integrations
+// ─── Integrations ─────────────────────────────────────────────────────────────
 export const integrationApi = {
-  list: () => apiFetch("/integrations/"),
-  get: (id: string) => apiFetch(`/integrations/${id}`),
+  list: () => apiFetch("/integration-service/integrations/"),
+
+  get: (id: string) => apiFetch(`/integration-service/integrations/${id}`),
+
   create: (data: { name: string; platform: string; platform_config?: object }) =>
-    apiFetch("/integrations/", { method: "POST", body: JSON.stringify(data) }),
+    apiFetch("/integration-service/integrations/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   update: (id: string, data: object) =>
-    apiFetch(`/integrations/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-  delete: (id: string) => apiFetch(`/integrations/${id}`, { method: "DELETE" }),
-  oauthInit: (id: string) => apiFetch(`/integrations/${id}/oauth/init`),
-  tokenStatus: (id: string) => apiFetch(`/integrations/${id}/token/status`),
+    apiFetch(`/integration-service/integrations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    apiFetch(`/integration-service/integrations/${id}`, { method: "DELETE" }),
+
+  oauthInit: (id: string) =>
+    apiFetch(`/integration-service/integrations/${id}/oauth/init`),
+
+  tokenStatus: (id: string) =>
+    apiFetch(`/integration-service/integrations/${id}/token/status`),
 };
 
-// Analytics
+// ─── Analytics ────────────────────────────────────────────────────────────────
 export const analyticsApi = {
-  kpi: (integration_id: string, date_from: string, date_to: string) =>
-    apiFetch(`/analytics/kpi?integration_id=${integration_id}&date_from=${date_from}&date_to=${date_to}`),
-  funnel: (integration_id: string, date_from: string, date_to: string) =>
-    apiFetch(`/analytics/funnel?integration_id=${integration_id}&date_from=${date_from}&date_to=${date_to}`),
+  kpi: (integration_id: string, date_from: string, date_to: string) => {
+    const p = new URLSearchParams({ integration_id, date_from, date_to });
+    return apiFetch(`/analytics-service/analytics/kpi?${p}`);
+  },
+
+  funnel: (integration_id: string, date_from: string, date_to: string) => {
+    const p = new URLSearchParams({ integration_id, date_from, date_to });
+    return apiFetch(`/analytics-service/analytics/funnel?${p}`);
+  },
+
   comparePeriods: (
     integration_id: string,
-    period_a_from: string, period_a_to: string,
-    period_b_from: string, period_b_to: string,
-  ) =>
-    apiFetch(`/analytics/compare/periods?integration_id=${integration_id}&period_a_from=${period_a_from}&period_a_to=${period_a_to}&period_b_from=${period_b_from}&period_b_to=${period_b_to}`),
-  comparePlatforms: (integration_id: string, date_from: string, date_to: string) =>
-    apiFetch(`/analytics/compare/platforms?integration_id=${integration_id}&date_from=${date_from}&date_to=${date_to}`),
-  anomalies: (integration_id?: string, is_resolved?: boolean) => {
-    const params = new URLSearchParams();
-    if (integration_id) params.set("integration_id", integration_id);
-    if (is_resolved !== undefined) params.set("is_resolved", String(is_resolved));
-    return apiFetch(`/analytics/anomalies?${params}`);
+    period_a_from: string,
+    period_a_to: string,
+    period_b_from: string,
+    period_b_to: string,
+  ) => {
+    const p = new URLSearchParams({
+      integration_id,
+      period_a_from,
+      period_a_to,
+      period_b_from,
+      period_b_to,
+    });
+    return apiFetch(`/analytics-service/analytics/compare/periods?${p}`);
   },
+
+  comparePlatforms: (integration_id: string, date_from: string, date_to: string) => {
+    const p = new URLSearchParams({ integration_id, date_from, date_to });
+    return apiFetch(`/analytics-service/analytics/compare/platforms?${p}`);
+  },
+
+  anomalies: (integration_id?: string, is_resolved?: boolean) => {
+    const p = new URLSearchParams();
+    if (integration_id) p.set("integration_id", integration_id);
+    if (is_resolved !== undefined) p.set("is_resolved", String(is_resolved));
+    return apiFetch(`/analytics-service/analytics/anomalies?${p}`);
+  },
+
+  resolveAnomaly: (id: string) =>
+    apiFetch(`/analytics-service/analytics/anomalies/${id}/resolve`, {
+      method: "PATCH",
+    }),
 };

@@ -22,12 +22,12 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    // Для локальной разработки: проксируем все запросы к сервисам на nginx
     proxy: {
-      "/api": {
-        target: "http://localhost:80",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
+      "/auth-service": { target: "http://localhost:80", changeOrigin: true },
+      "/analytics-service": { target: "http://localhost:80", changeOrigin: true },
+      "/integration-service": { target: "http://localhost:80", changeOrigin: true },
+      "/scheduler-service": { target: "http://localhost:80", changeOrigin: true },
     },
   },
 });

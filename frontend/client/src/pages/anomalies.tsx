@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { analyticsApi, integrationApi, apiFetch } from "@/lib/api";
+import { analyticsApi, integrationApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, CheckCircle2, Clock, Filter, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -47,8 +47,7 @@ export default function Anomalies() {
   });
 
   const resolveMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiFetch(`/analytics/anomalies/${id}/resolve`, { method: "PATCH" }),
+    mutationFn: (id: string) => analyticsApi.resolveAnomaly(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/analytics/anomalies"] });
       toast({ title: "Аномалия помечена как решённая" });
