@@ -15,17 +15,18 @@ export default function AuthPage() {
   const { login } = useAuth();
   const { toast } = useToast();
 
-  // Login form
+  // Login: username = email (OAuth2PasswordRequestForm)
   const [loginData, setLoginData] = useState({ username: "", password: "" });
 
-  // Register form
+  // Register: UserRegisterSchema
   const [regData, setRegData] = useState({
-    username: "",
     email: "",
     password: "",
     password2: "",
+    username: "",
     first_name: "",
     last_name: "",
+    date_of_birth: "",
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -46,18 +47,23 @@ export default function AuthPage() {
       toast({ title: "Пароли не совпадают", variant: "destructive" });
       return;
     }
+    if (regData.password.length < 8) {
+      toast({ title: "Пароль должен быть не менее 8 символов", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       await authApi.register({
-        username: regData.username,
         email: regData.email,
         password: regData.password,
-        first_name: regData.first_name || undefined,
+        username: regData.username,
+        first_name: regData.first_name,
         last_name: regData.last_name || undefined,
+        date_of_birth: regData.date_of_birth,
       });
       toast({ title: "Аккаунт создан", description: "Теперь войдите в систему" });
       setMode("login");
-      setLoginData({ username: regData.username, password: "" });
+      setLoginData({ username: regData.email, password: "" });
     } catch (err: any) {
       toast({ title: "Ошибка регистрации", description: err.message, variant: "destructive" });
     } finally {
@@ -82,7 +88,8 @@ export default function AuthPage() {
               Единая платформа<br />мониторинга рекламы
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm">
-              Собирайте данные из Google Ads, Яндекс Директ и Meta Ads в одном месте. Анализируйте эффективность, выявляйте аномалии и строите отчёты автоматически.
+              Собирайте данные из Google Ads, Яндекс Директ и Meta Ads в одном месте.
+              Анализируйте эффективность, выявляйте аномалии и стройте отчёты автоматически.
             </p>
           </div>
 
@@ -115,8 +122,8 @@ export default function AuthPage() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-6">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
+        <div className="w-full max-w-md space-y-6 py-6">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 lg:hidden">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -132,7 +139,7 @@ export default function AuthPage() {
               </CardTitle>
               <CardDescription>
                 {mode === "login"
-                  ? "Введите учётные данные для доступа к платформе"
+                  ? "Введите email и пароль для доступа к платформе"
                   : "Заполните форму для регистрации"}
               </CardDescription>
             </CardHeader>
@@ -140,20 +147,21 @@ export default function AuthPage() {
               {mode === "login" ? (
                 <form onSubmit={handleLogin} className="space-y-4" data-testid="form-login">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Имя пользователя</Label>
+                    <Label htmlFor="login-email">Email</Label>
                     <Input
-                      id="username"
+                      id="login-email"
+                      type="email"
                       data-testid="input-username"
-                      placeholder="username"
+                      placeholder="email@company.com"
                       value={loginData.username}
                       onChange={e => setLoginData(p => ({ ...p, username: e.target.value }))}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Пароль</Label>
+                    <Label htmlFor="login-password">Пароль</Label>
                     <Input
-                      id="password"
+                      id="login-password"
                       type="password"
                       data-testid="input-password"
                       placeholder="••••••••"
@@ -168,20 +176,27 @@ export default function AuthPage() {
                     disabled={loading}
                     data-testid="button-login"
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     Войти
                   </Button>
                 </form>
               ) : (
                 <form onSubmit={handleRegister} className="space-y-4" data-testid="form-register">
+                  {/* Имя и фамилия */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="first_name">Имя</Label>
+                      <Label htmlFor="first_name">
+                        Имя <span className="text-destructive">*</span>
+                      </Label>
                       <Input
                         id="first_name"
                         placeholder="Иван"
                         value={regData.first_name}
                         onChange={e => setRegData(p => ({ ...p, first_name: e.target.value }))}
+                        required
+                        minLength={1}
+                        maxLength={50}
+                        data-testid="input-first-name"
                       />
                     </div>
                     <div className="space-y-2">
@@ -191,21 +206,34 @@ export default function AuthPage() {
                         placeholder="Иванов"
                         value={regData.last_name}
                         onChange={e => setRegData(p => ({ ...p, last_name: e.target.value }))}
+                        maxLength={50}
+                        data-testid="input-last-name"
                       />
                     </div>
                   </div>
+
+                  {/* Username */}
                   <div className="space-y-2">
-                    <Label htmlFor="reg-username">Имя пользователя</Label>
+                    <Label htmlFor="reg-username">
+                      Имя пользователя <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="reg-username"
                       placeholder="username"
                       value={regData.username}
                       onChange={e => setRegData(p => ({ ...p, username: e.target.value }))}
                       required
+                      minLength={3}
+                      maxLength={30}
+                      data-testid="input-reg-username"
                     />
                   </div>
+
+                  {/* Email */}
                   <div className="space-y-2">
-                    <Label htmlFor="reg-email">Email</Label>
+                    <Label htmlFor="reg-email">
+                      Email <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="reg-email"
                       type="email"
@@ -213,21 +241,49 @@ export default function AuthPage() {
                       value={regData.email}
                       onChange={e => setRegData(p => ({ ...p, email: e.target.value }))}
                       required
+                      data-testid="input-reg-email"
                     />
                   </div>
+
+                  {/* Дата рождения */}
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password">Пароль</Label>
+                    <Label htmlFor="date_of_birth">
+                      Дата рождения <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="date_of_birth"
+                      type="date"
+                      value={regData.date_of_birth}
+                      onChange={e => setRegData(p => ({ ...p, date_of_birth: e.target.value }))}
+                      required
+                      max={new Date().toISOString().split("T")[0]}
+                      data-testid="input-date-of-birth"
+                    />
+                  </div>
+
+                  {/* Пароль */}
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-password">
+                      Пароль <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="reg-password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder="Минимум 8 символов"
                       value={regData.password}
                       onChange={e => setRegData(p => ({ ...p, password: e.target.value }))}
                       required
+                      minLength={8}
+                      maxLength={50}
+                      data-testid="input-reg-password"
                     />
                   </div>
+
+                  {/* Подтверждение пароля */}
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password2">Повторите пароль</Label>
+                    <Label htmlFor="reg-password2">
+                      Повторите пароль <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="reg-password2"
                       type="password"
@@ -235,10 +291,17 @@ export default function AuthPage() {
                       value={regData.password2}
                       onChange={e => setRegData(p => ({ ...p, password2: e.target.value }))}
                       required
+                      data-testid="input-reg-password2"
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading} data-testid="button-register">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loading}
+                    data-testid="button-register"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     Зарегистрироваться
                   </Button>
                 </form>

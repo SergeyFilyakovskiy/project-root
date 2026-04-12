@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,28 +10,22 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
 import { userApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import {
-  User,
-  Mail,
-  Lock,
-  Loader2,
-  Shield,
-  Moon,
-  Sun,
-  AlertTriangle,
-} from "lucide-react";
+import { User, Mail, Lock, Loader2, Shield, Moon, Sun, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 export default function Profile() {
   const { user, refetch, logout } = useAuth();
   const { toast } = useToast();
-  const qc = useQueryClient();
+
+  // UserResponseSchema: { id, email, role, profile: { username, first_name, last_name, date_of_birth, ... }, created_at }
+  const profile = (user as any)?.profile;
 
   const [profileForm, setProfileForm] = useState({
-    username: user?.username ?? "",
-    email: user?.email ?? "",
+    username: profile?.username ?? "",
+    email: (user as any)?.email ?? "",
   });
 
+  // Смена пароля — UserChangePasswordSchema: { old_password (min 8), new_password (min 8) }
   const [passwordForm, setPasswordForm] = useState({
     old_password: "",
     new_password: "",
@@ -53,6 +47,7 @@ export default function Profile() {
     }
   };
 
+  // PATCH /auth-service/user/me — UserUpdateSchema { username?, email?, password? }
   const updateMutation = useMutation({
     mutationFn: (d: { username?: string; email?: string }) => userApi.updateMe(d),
     onSuccess: () => {
@@ -62,6 +57,7 @@ export default function Profile() {
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // PATCH /auth-service/user/me/password — UserChangePasswordSchema { old_password, new_password }
   const passwordMutation = useMutation({
     mutationFn: ({ old_password, new_password }: { old_password: string; new_password: string }) =>
       userApi.changePassword(old_password, new_password),
@@ -72,6 +68,7 @@ export default function Profile() {
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // DELETE /auth-service/user/me
   const deleteMutation = useMutation({
     mutationFn: () => userApi.deleteMe(),
     onSuccess: () => {
@@ -83,7 +80,10 @@ export default function Profile() {
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate(profileForm);
+    updateMutation.mutate({
+      username: profileForm.username || undefined,
+      email: profileForm.email || undefined,
+    });
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -92,11 +92,18 @@ export default function Profile() {
       toast({ title: "Пароли не совпадают", variant: "destructive" });
       return;
     }
+    if (passwordForm.new_password.length < 8) {
+      toast({ title: "Пароль должен быть не менее 8 символов", variant: "destructive" });
+      return;
+    }
     passwordMutation.mutate({
       old_password: passwordForm.old_password,
       new_password: passwordForm.new_password,
     });
   };
+
+  const displayName = profile?.username ?? (user as any)?.email ?? "—";
+  const initials = (profile?.first_name?.[0] ?? (user as any)?.email?.[0] ?? "U").toUpperCase();
 
   return (
     <AppLayout
@@ -116,17 +123,24 @@ export default function Profile() {
           <CardContent>
             <div className="flex items-center gap-4 mb-5">
               <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">
-                  {user?.email?.[0]?.toUpperCase() ?? "U"}
-                </span>
+                <span className="text-lg font-bold text-primary">{initials}</span>
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">{user?.username ?? user?.email}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-                <Badge variant="secondary" className="text-xs mt-1">
-                  <Shield className="w-2.5 h-2.5 mr-1" />
-                  {user?.role ?? "user"}
-                </Badge>
+                <p className="text-sm font-medium text-foreground">
+                  {profile?.first_name} {profile?.last_name ?? ""}
+                </p>
+                <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="text-xs">
+                    <Shield className="w-2.5 h-2.5 mr-1" />
+                    {(user as any)?.role ?? "user"}
+                  </Badge>
+                  {profile?.date_of_birth && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(profile.date_of_birth).toLocaleDateString("ru-RU")}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -139,6 +153,8 @@ export default function Profile() {
                   value={profileForm.username}
                   onChange={e => setProfileForm(p => ({ ...p, username: e.target.value }))}
                   className="h-9"
+                  minLength={3}
+                  maxLength={30}
                   data-testid="input-profile-username"
                 />
               </div>
@@ -174,6 +190,7 @@ export default function Profile() {
               <Lock className="w-4 h-4 text-primary" />
               Смена пароля
             </CardTitle>
+            <CardDescription className="text-xs">Минимум 8 символов</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-4">
@@ -184,8 +201,10 @@ export default function Profile() {
                   value={passwordForm.old_password}
                   onChange={e => setPasswordForm(p => ({ ...p, old_password: e.target.value }))}
                   className="h-9"
-                  data-testid="input-old-password"
+                  minLength={8}
+                  maxLength={50}
                   required
+                  data-testid="input-old-password"
                 />
               </div>
               <div className="space-y-2">
@@ -195,8 +214,10 @@ export default function Profile() {
                   value={passwordForm.new_password}
                   onChange={e => setPasswordForm(p => ({ ...p, new_password: e.target.value }))}
                   className="h-9"
-                  data-testid="input-new-password"
+                  minLength={8}
+                  maxLength={50}
                   required
+                  data-testid="input-new-password"
                 />
               </div>
               <div className="space-y-2">
@@ -206,8 +227,8 @@ export default function Profile() {
                   value={passwordForm.new_password2}
                   onChange={e => setPasswordForm(p => ({ ...p, new_password2: e.target.value }))}
                   className="h-9"
-                  data-testid="input-new-password2"
                   required
+                  data-testid="input-new-password2"
                 />
               </div>
               <Button
@@ -234,9 +255,7 @@ export default function Profile() {
                 {darkMode ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-chart-3" />}
                 <div>
                   <p className="text-sm font-medium">Тёмная тема</p>
-                  <p className="text-xs text-muted-foreground">
-                    {darkMode ? "Включена" : "Выключена"}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{darkMode ? "Включена" : "Выключена"}</p>
                 </div>
               </div>
               <Switch
@@ -255,9 +274,7 @@ export default function Profile() {
               <AlertTriangle className="w-4 h-4" />
               Опасная зона
             </CardTitle>
-            <CardDescription className="text-xs">
-              Необратимые действия с аккаунтом
-            </CardDescription>
+            <CardDescription className="text-xs">Необратимые действия с аккаунтом</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between p-3 rounded-lg border border-destructive/30 bg-destructive/5">

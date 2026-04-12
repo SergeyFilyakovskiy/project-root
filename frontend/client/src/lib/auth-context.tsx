@@ -1,17 +1,28 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authApi, userApi } from "./api";
 
-interface User {
+// UserResponseSchema: { id, email, role, profile: { id, username, first_name, last_name, date_of_birth, created_at }, created_at }
+export interface UserProfile {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string | null;
+  date_of_birth: string;
+  created_at: string;
+}
+
+export interface AuthUser {
   id: number;
   email: string;
   role: string;
-  username?: string;
+  profile: UserProfile;
+  created_at: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
 }
@@ -19,7 +30,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refetch = async () => {
@@ -35,13 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetch().finally(() => setLoading(false));
   }, []);
 
-  const login = async (username: string, password: string) => {
-    await authApi.login(username, password);
+  const login = async (email: string, password: string) => {
+    // OAuth2PasswordRequestForm: поле называется username, но туда передаём email
+    await authApi.login(email, password);
     await refetch();
   };
 
   const logout = async () => {
-    await authApi.logout();
+    try { await authApi.logout(); } catch { /* игнорируем если токен уже истёк */ }
     setUser(null);
   };
 

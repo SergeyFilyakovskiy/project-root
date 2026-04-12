@@ -126,11 +126,11 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
           <div className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[hsl(var(--sidebar-accent))] transition-colors group">
             <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-semibold text-primary">
-                {user?.email?.[0]?.toUpperCase() ?? "U"}
+                {user?.profile?.first_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "U"}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground truncate">{user?.username || user?.email}</p>
+              <p className="text-xs font-medium text-foreground truncate">{user?.profile?.username || user?.email}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.role}</p>
             </div>
             <Button
