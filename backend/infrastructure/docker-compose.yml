@@ -141,7 +141,7 @@ services:
      build: ../services/api-gateway
      container_name: api-gateway
      restart: unless-stopped
-     env_file: ../services/api-gateway/.env
+
      depends_on:
        redis:
          condition: service_healthy

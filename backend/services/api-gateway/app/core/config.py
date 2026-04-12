@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         "/auth-service/openapi.json",
         "/auth-service/redoc",
         "/integration-service/integrations/internal/",
+        "*/*"
     ]
 
 

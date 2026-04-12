@@ -1,12 +1,15 @@
+# syntax=docker/dockerfile:1
 FROM python:3.12-slim
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 WORKDIR /app
 
-RUN pip install uv
-
-COPY pyproject.toml .
-RUN uv pip install --system --no-cache -r pyproject.toml
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
 COPY app/ ./app/
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
