@@ -13,7 +13,6 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     """
     __abstract__ = True #для того чтобы не создавалась таблица для этого класса
-    __table_args__ = {"schema": "analytic"}
 
 
     id: Mapped[uuid.UUID] =  mapped_column(

@@ -1,9 +1,25 @@
-CREATE SCHEMA IF NOT EXISTS auth;
-CREATE SCHEMA IF NOT EXISTS integrations;
-CREATE SCHEMA IF NOT EXISTS sync;
-CREATE SCHEMA IF NOT EXISTS normalization;
-CREATE SCHEMA IF NOT EXISTS manual_input;
-CREATE SCHEMA IF NOT EXISTS reporting;
-CREATE SCHEMA IF NOT EXISTS notifications;
-CREATE SCHEMA IF NOT EXISTS scheduler;
-CREATE SCHEMA IF NOT EXISTS analytic;
+-- init.sql
+
+-- auth-service
+CREATE DATABASE auth_db;
+
+-- integration-service
+CREATE DATABASE integrations_db;
+
+-- normalization-service
+CREATE DATABASE normalization_db;
+
+-- manual-input-service
+CREATE DATABASE manual_input_db;
+
+-- reporting-service
+CREATE DATABASE reporting_db;
+
+-- notification-service
+CREATE DATABASE notifications_db;
+
+-- analytics-service
+CREATE DATABASE analytics_db;
+
+-- sync-worker
+CREATE DATABASE sync_db;

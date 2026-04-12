@@ -7,6 +7,6 @@ tests/
 .env
 *.md
 uv.lock
-*.mako
+
 .vscode
 backend/services/integration-service/app/db/migrations/versions/f710197b3e3b_initial_revision.py

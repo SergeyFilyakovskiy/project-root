@@ -15,7 +15,6 @@ class Base(DeclarativeBase, AsyncAttrs):
 
     """
     __abstract__ = True #для того чтобы не создавалась таблица для этого класса
-    __table_args__ = {"schema": "sync"}
 
 
     id: Mapped[uuid.UUID] =  mapped_column(
