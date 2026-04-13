@@ -144,12 +144,16 @@ export default function Integrations() {
     window.addEventListener("focus", onFocus);
 
     // Случай 2 — OAuth редиректнул обратно в эту же вкладку с ?oauth=success
-    const params = new URLSearchParams(window.location.search);
+    // В hash-роутинге параметры идут после # : /#/integrations?oauth=success
+    // window.location.search тут пустой — нужно парсить из hash
+    const hash = window.location.hash; // "#/integrations?oauth=success"
+    const queryString = hash.includes("?") ? hash.split("?")[1] : "";
+    const params = new URLSearchParams(queryString);
     if (params.get("oauth") === "success") {
       qc.invalidateQueries({ queryKey: ["/integrations"] });
       toast({ title: "Интеграция подключена", description: "Токен успешно получен" });
-      // Убираем параметр из URL чтобы не срабатывало повторно при F5
-      window.history.replaceState({}, "", window.location.pathname + window.location.hash.split("?")[0]);
+      // Убираем ?oauth=success из URL чтобы не срабатывало повторно при F5
+      window.history.replaceState({}, "", window.location.pathname + "#/integrations");
     }
 
     return () => window.removeEventListener("focus", onFocus);
