@@ -69,6 +69,7 @@ class IntegrationResponse(BaseModel):
         name: Название интеграции.
         is_active: Флаг активности интеграции.
         platform_config: Специфичные для платформы параметры.
+        token_expires_at: Время истечения access_token. None если токен ещё не получен.
         created_at: Дата и время создания записи (генерируется БД).
         updated_at: Дата и время последнего обновления записи (генерируется БД).
     """
@@ -78,6 +79,7 @@ class IntegrationResponse(BaseModel):
     name: str
     is_active: bool
     platform_config: dict[str, Any]
+    token_expires_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -1,6 +1,7 @@
 import uuid
 import time
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.schemas import (
@@ -60,6 +61,60 @@ async def list_integrations(
     return IntegrationListResponse(items=items, total=len(items)) # type: ignore
 
 
+# --- OAuth (ВАЖНО: статические роуты ПЕРЕД /{integration_id}) ---
+
+@router.get("/oauth/callback")
+async def oauth_callback(
+    request: Request,
+    code: str,
+    state: str,
+    session: postgres_dependency,
+    redis: redis_dependency,
+    # Google присылает дополнительные параметры — принимаем их опционально
+    iss: str | None = None,
+    scope: str | None = None,
+):
+    integration_id_raw = await redis.getdel(f"oauth_state:{state}")
+    if not integration_id_raw:
+        raise HTTPException(400, "Invalid or expired state")
+
+    integration_id = uuid.UUID(integration_id_raw)
+    repo = IntegrationRepo(session)
+    integration = await repo.get_by_id(integration_id)
+    if not integration:
+        raise HTTPException(404, "Integration not found")
+
+    token_data = await _exchange_code(code, PlatformEnum(integration.platform))
+    await repo.save_tokens(
+        integration_id=integration_id,
+        access_token=token_data["access_token"],
+        refresh_token=token_data.get("refresh_token"),
+        token_expires_at=token_data["expires_at"],
+    )
+
+    # Редирект обратно на фронт.
+    # Используем X-Forwarded-Host если есть (ngrok/nginx proxy), иначе host из запроса.
+    forwarded_host = request.headers.get("x-forwarded-host")
+    host = forwarded_host or request.headers.get("host") or request.base_url.netloc
+
+    # При работе через ngrok всегда https, иначе берём схему из X-Forwarded-Proto
+    forwarded_proto = request.headers.get("x-forwarded-proto", "https")
+    scheme = forwarded_proto if forwarded_host else "https"
+
+    redirect_url = f"{scheme}://{host}/#/integrations?oauth=success"
+    return RedirectResponse(url=redirect_url, status_code=302)
+
+
+@router.get("/internal/", dependencies=[Depends(verify_service_key)])
+async def list_integrations_internal(
+    service: IntegrationService = Depends(get_service)
+):
+    items = await service.get_all_active()
+    return IntegrationListResponse(items=items, total=len(items)) # type: ignore
+
+
+# --- Параметрические роуты /{integration_id} — ПОСЛЕ статических ---
+
 @router.get("/{integration_id}", response_model=IntegrationResponse)
 async def get_integration(
     integration_id: uuid.UUID,
@@ -97,8 +152,6 @@ async def delete_integration(
         raise HTTPException(404, "Integration not found")
 
 
-# --- OAuth ---
-
 @router.get("/{integration_id}/oauth/init", response_model=OAuthInitResponse)
 async def oauth_init(
     integration_id: uuid.UUID,
@@ -118,39 +171,15 @@ async def oauth_init(
         "response_type": "code",
         "scope": OAUTH_SCOPES[platform],
         "state": state,
-        **({"access_type": "offline", "prompt": "consent"} if platform == PlatformEnum.GOOGLE_ADS else {}),
+        **({
+            "access_type": "offline",
+            "prompt": "consent",
+        } if platform == PlatformEnum.GOOGLE_ADS else {}),
     }
 
     base_url = OAUTH_URLS[platform]
     query = "&".join(f"{k}={v}" for k, v in params.items())
     return OAuthInitResponse(auth_url=f"{base_url}?{query}")
-
-
-@router.get("/oauth/callback")
-async def oauth_callback(
-    code: str,
-    state: str,
-    session: postgres_dependency,
-    redis: redis_dependency,
-):
-    integration_id_raw = await redis.getdel(f"oauth_state:{state}")
-    if not integration_id_raw:
-        raise HTTPException(400, "Invalid or expired state")
-
-    integration_id = uuid.UUID(integration_id_raw)
-    repo = IntegrationRepo(session)
-    integration = await repo.get_by_id(integration_id)
-    if not integration:
-        raise HTTPException(404, "Integration not found")
-
-    token_data = await _exchange_code(code, PlatformEnum(integration.platform))
-    await repo.save_tokens(
-        integration_id=integration_id,
-        access_token=token_data["access_token"],
-        refresh_token=token_data.get("refresh_token"),
-        token_expires_at=token_data["expires_at"],
-    )
-    return {"status": "ok", "integration_id": str(integration_id)}
 
 
 @router.get("/{integration_id}/token/status", response_model=TokenStatusResponse)
@@ -193,7 +222,6 @@ async def _exchange_code(code: str, platform: PlatformEnum) -> dict:
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        print("Google response:", response.status_code, response.text)
         response.raise_for_status()
         data = response.json()
 
@@ -203,10 +231,3 @@ async def _exchange_code(code: str, platform: PlatformEnum) -> dict:
         "refresh_token": data.get("refresh_token"),
         "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
     }
-
-@router.get("/internal/", dependencies=[Depends(verify_service_key)])
-async def list_integrations_internal(
-    service: IntegrationService = Depends(get_service)
-):
-    items = await service.get_all_active()
-    return IntegrationListResponse(items=items, total=len(items)) # type: ignore

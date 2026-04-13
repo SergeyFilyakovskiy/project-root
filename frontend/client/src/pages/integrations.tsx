@@ -140,21 +140,29 @@ export default function Integrations() {
     const queryString = hash.includes("?") ? hash.split("?")[1] : "";
     const params = new URLSearchParams(queryString);
     if (params.get("oauth") === "success") {
-      qc.invalidateQueries({ queryKey: ["/integrations"] });
-      toast({ title: "Интеграция подключена", description: "Токен успешно получен" });
+      // Чистим URL сразу, чтобы не сработало повторно
       window.history.replaceState({}, "", window.location.pathname + "#/integrations");
+      // refetchQueries форсирует немедленный повторный запрос
+      // (invalidateQueries только помечает как stale, refetch нужен явный)
+      qc.refetchQueries({ queryKey: ["/integrations"] }).then(() => {
+        toast({ title: "Интеграция подключена", description: "Токен успешно получен" });
+      });
     }
   };
 
   useEffect(() => {
     // Проверяем сразу при маунте — вдруг уже есть ?oauth=success
-    checkOAuthSuccess();
+    // Небольшая задержка чтобы useQuery успел зарегистрироваться
+    const timer = setTimeout(checkOAuthSuccess, 300);
 
     // Слушаем изменение hash — срабатывает когда бэк редиректит
     // обратно на /#/integrations?oauth=success пока страница уже открыта
     window.addEventListener("hashchange", checkOAuthSuccess);
 
-    return () => window.removeEventListener("hashchange", checkOAuthSuccess);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("hashchange", checkOAuthSuccess);
+    };
   }, []);
 
   const createMutation = useMutation({
