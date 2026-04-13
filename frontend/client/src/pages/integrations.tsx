@@ -135,28 +135,26 @@ export default function Integrations() {
   // Перезагружаем список когда:
   // 1. Вкладка получает фокус (пользователь вернулся после OAuth в новой вкладке)
   // 2. В URL есть ?oauth=success (редирект пришёл в эту же вкладку)
-  useEffect(() => {
-    // Случай 1 — OAuth открывался в новой вкладке через window.open()
-    // Когда пользователь закрывает OAuth-вкладку и возвращается — перезагружаем
-    const onFocus = () => {
-      qc.invalidateQueries({ queryKey: ["/integrations"] });
-    };
-    window.addEventListener("focus", onFocus);
-
-    // Случай 2 — OAuth редиректнул обратно в эту же вкладку с ?oauth=success
-    // В hash-роутинге параметры идут после # : /#/integrations?oauth=success
-    // window.location.search тут пустой — нужно парсить из hash
+  const checkOAuthSuccess = () => {
     const hash = window.location.hash; // "#/integrations?oauth=success"
     const queryString = hash.includes("?") ? hash.split("?")[1] : "";
     const params = new URLSearchParams(queryString);
     if (params.get("oauth") === "success") {
       qc.invalidateQueries({ queryKey: ["/integrations"] });
       toast({ title: "Интеграция подключена", description: "Токен успешно получен" });
-      // Убираем ?oauth=success из URL чтобы не срабатывало повторно при F5
       window.history.replaceState({}, "", window.location.pathname + "#/integrations");
     }
+  };
 
-    return () => window.removeEventListener("focus", onFocus);
+  useEffect(() => {
+    // Проверяем сразу при маунте — вдруг уже есть ?oauth=success
+    checkOAuthSuccess();
+
+    // Слушаем изменение hash — срабатывает когда бэк редиректит
+    // обратно на /#/integrations?oauth=success пока страница уже открыта
+    window.addEventListener("hashchange", checkOAuthSuccess);
+
+    return () => window.removeEventListener("hashchange", checkOAuthSuccess);
   }, []);
 
   const createMutation = useMutation({
