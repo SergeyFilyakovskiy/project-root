@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ import {
   Trash2,
   ExternalLink,
   CheckCircle2,
-  XCircle,
   Loader2,
   Link2,
   AlertCircle,
@@ -72,14 +71,12 @@ function IntegrationCard({ integration, onDelete, onOAuth }: {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Badge variant={integration.is_active ? "default" : "secondary"} className="text-xs">
-              {integration.is_active ? "Активна" : "Отключена"}
-            </Badge>
-          </div>
+          <Badge variant={integration.is_active ? "default" : "secondary"} className="text-xs">
+            {integration.is_active ? "Активна" : "Отключена"}
+          </Badge>
         </div>
 
-        {/* Token status */}
+        {/* Token status — берётся из token_expires_at в ответе списка */}
         <div className="flex items-center gap-2 mb-4">
           {!isExpired ? (
             <>
@@ -135,6 +132,29 @@ export default function Integrations() {
     queryFn: () => integrationApi.list(),
   });
 
+  // Перезагружаем список когда:
+  // 1. Вкладка получает фокус (пользователь вернулся после OAuth в новой вкладке)
+  // 2. В URL есть ?oauth=success (редирект пришёл в эту же вкладку)
+  useEffect(() => {
+    // Случай 1 — OAuth открывался в новой вкладке через window.open()
+    // Когда пользователь закрывает OAuth-вкладку и возвращается — перезагружаем
+    const onFocus = () => {
+      qc.invalidateQueries({ queryKey: ["/integrations"] });
+    };
+    window.addEventListener("focus", onFocus);
+
+    // Случай 2 — OAuth редиректнул обратно в эту же вкладку с ?oauth=success
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth") === "success") {
+      qc.invalidateQueries({ queryKey: ["/integrations"] });
+      toast({ title: "Интеграция подключена", description: "Токен успешно получен" });
+      // Убираем параметр из URL чтобы не срабатывало повторно при F5
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash.split("?")[0]);
+    }
+
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   const createMutation = useMutation({
     mutationFn: (d: { name: string; platform: string }) => integrationApi.create(d),
     onSuccess: () => {
@@ -159,7 +179,10 @@ export default function Integrations() {
   const handleOAuth = async (id: string) => {
     try {
       const res = await integrationApi.oauthInit(id);
-      if (res?.auth_url) window.open(res.auth_url, "_blank");
+      if (res?.auth_url) {
+        // Открываем в той же вкладке — тогда после callback фронт получит ?oauth=success
+        window.location.href = res.auth_url;
+      }
     } catch (e: any) {
       toast({ title: "Ошибка OAuth", description: e.message, variant: "destructive" });
     }
