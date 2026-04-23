@@ -5,7 +5,7 @@ def normalize(message: RawDataMessage) -> list[NormalizedMetric]: # type: ignore
     if platform == "google_ads":
         return _normalize_google(message)
     elif platform == "yandex_ads":
-        _normalize_yandex(message)
+        return _normalize_yandex(message)
     else:
         raise ValueError(f"Unsupported platform: {platform}")
 

@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Any
+
 
 class RawDataMessage(BaseModel):
     integration_id: str
@@ -19,3 +20,10 @@ class NormalizedMetric(BaseModel):
     currency: str
     ctr: float
     cpc: float 
+    
+    @field_validator("date", mode="before")
+    @classmethod
+    def coerce_date(cls, v):
+        if hasattr(v, "strftime"):
+            return v.strftime("%Y-%m-%d")
+        return str(v)

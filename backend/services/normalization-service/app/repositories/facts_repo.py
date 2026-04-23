@@ -1,10 +1,13 @@
 from clickhouse_driver import Client
 from app.messaging.schemas import NormalizedMetric
 
+from datetime import datetime
+
 def insert_metrics(client: Client, metrics: list[NormalizedMetric]):
     rows = [
         (
-            m.date, m.integration_id, m.platform,
+            datetime.strptime(m.date, "%Y-%m-%d").date(),  # ← str → date
+            m.integration_id, m.platform,
             m.campaign_group, m.campaign_id, m.campaign_name,
             m.impressions, m.clicks, m.spend,
             m.currency, m.ctr, m.cpc,

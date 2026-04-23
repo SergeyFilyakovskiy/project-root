@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class MetricResponse(BaseModel):
     date: str
     integration_id: str
