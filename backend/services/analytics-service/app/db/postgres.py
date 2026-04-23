@@ -30,12 +30,3 @@ async def get_postgres_connection():
         finally: 
             await session.aclose()
 
-
-async def get_postgres():
-    try:
-        session = async_session()
-        return session
-    except Exception as e:
-        raise e
-    finally:
-        await session.aclose()

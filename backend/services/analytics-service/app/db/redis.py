@@ -25,10 +25,4 @@ redis_pool = redis.ConnectionPool.from_url(
 )
 
 async def get_redis() -> Redis:
-    try:
-        redis_client = Redis.from_url(settings.get_redis_url(), decode_responses=True)
-        if redis_client is None:
-            raise Exception("Failed to connect redis")
-        return redis_client  
-    except Exception as e:
-        raise e
+    return Redis.from_url(settings.get_redis_url(), decode_responses=True)

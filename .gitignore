@@ -10,3 +10,8 @@ uv.lock
 
 .vscode
 backend/services/integration-service/app/db/migrations/versions/f710197b3e3b_initial_revision.py
+script/.python-version
+script/main.py
+script/pyproject.toml
+.gitignore
+script/script.py

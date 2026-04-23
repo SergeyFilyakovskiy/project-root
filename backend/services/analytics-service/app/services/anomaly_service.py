@@ -40,7 +40,7 @@ async def detect_and_save_anomalies(
                 "detected_at": datetime.now(),
                 "is_resolved": False,
             }
-            await AnomalyRepo.add(db, anomaly_data)
+            await AnomalyRepo.add(db, **anomaly_data)
             detected.append(anomaly_data)
 
     return detected
