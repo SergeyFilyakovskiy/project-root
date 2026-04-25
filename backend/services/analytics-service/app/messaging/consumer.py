@@ -42,7 +42,7 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage):
                 raise
 
 async def start_consumer():
-    connection = await aio_pika.connect_robust(settings.get_rabbitmq_url())
+    connection = await aio_pika.connect_robust(url=settings.get_rabbitmq_url(), timeout= 10)
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=10)
     queue = await channel.declare_queue("normalized_data", durable=True)

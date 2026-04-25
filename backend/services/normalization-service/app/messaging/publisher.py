@@ -17,6 +17,7 @@ async def publish_normalized(metrics: list[dict]):
                         ),
                         routing_key="normalized_data"
                     )
-            logger.info(f"[publisher] Опубликовано {len(metrics)} записей в 'normalized_data'")
+            
+        logger.info(f"[publisher] Опубликовано {len(metrics)} записей в 'normalized_data'")
             
 

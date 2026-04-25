@@ -37,7 +37,6 @@ async def detect_and_save_anomalies(
                 "expected": round(avg, 4),
                 "actual": round(latest["value"], 4),
                 "deviation": round(deviation, 2),
-                "detected_at": datetime.now(),
                 "is_resolved": False,
             }
             await AnomalyRepo.add(db, **anomaly_data)
