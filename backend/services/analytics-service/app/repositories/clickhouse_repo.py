@@ -1,4 +1,4 @@
-from datetime import date
+
 from clickhouse_driver import Client
 
 COLUMNS = [
@@ -11,8 +11,8 @@ def get_metrics(
         client: Client,
         integration_id: str | None = None,
         platform: str | None = None,
-        date_from: date | None = None,
-        date_to: date | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
         limit: int = 1000,
         offset: int = 0
 )-> list[dict]:

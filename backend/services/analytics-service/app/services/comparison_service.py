@@ -1,12 +1,12 @@
-from datetime import date
+
 from clickhouse_driver import Client
 from app.repositories.clickhouse_repo import get_metrics
 
 def compare_periods(
     client: Client,
     integration_id: str,
-    period_a: tuple[date, date],
-    period_b: tuple[date, date],
+    period_a: tuple[str, str],
+    period_b: tuple[str, str],
 ) -> dict:
     def aggregate(rows):
         if not rows:
@@ -41,8 +41,8 @@ def compare_periods(
 def compare_platforms(
     client: Client,
     integration_id: str,
-    date_from: date,
-    date_to: date,
+    date_from: str,
+    date_to: str,
 ) -> list[dict]:
     rows = get_metrics(client, integration_id=integration_id, date_from=date_from, date_to=date_to)
 

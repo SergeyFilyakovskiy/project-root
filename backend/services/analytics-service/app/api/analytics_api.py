@@ -14,8 +14,8 @@ async def kpi(
     click: clickhouse_dependency,
     redis: redis_dependency,
     integration_id: str = Query(...),
-    date_from: date = Query(...),
-    date_to: date = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
 ):
 
     return await get_kpi(click, redis, integration_id, date_from, date_to)
@@ -25,8 +25,8 @@ async def kpi(
 async def funnel(
     click: clickhouse_dependency,
     integration_id: str = Query(...),
-    date_from: date = Query(...),
-    date_to: date = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
 ):
     return get_funnel(click, integration_id, date_from, date_to)
 
@@ -35,10 +35,10 @@ async def funnel(
 async def compare_periods_endpoint(
     click: clickhouse_dependency,
     integration_id: str = Query(...),
-    period_a_from: date = Query(...),
-    period_a_to: date = Query(...),
-    period_b_from: date = Query(...),
-    period_b_to: date = Query(...),
+    period_a_from: str = Query(...),
+    period_a_to: str = Query(...),
+    period_b_from: str = Query(...),
+    period_b_to: str = Query(...),
 ):
     return compare_periods(
         click, integration_id,
@@ -51,8 +51,8 @@ async def compare_periods_endpoint(
 async def compare_platforms_endpoint(
     click: clickhouse_dependency,
     integration_id: str = Query(...),
-    date_from: date = Query(...),
-    date_to: date = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
 ): 
     return compare_platforms(click, integration_id, date_from, date_to)
 

@@ -1,7 +1,6 @@
 import json
 from clickhouse_driver import Client
 from redis.asyncio import Redis
-from datetime import date
 from app.repositories.clickhouse_repo import get_metrics
 from app.core.config import settings
 
@@ -9,8 +8,8 @@ async def get_kpi(
     client: Client,
     redis: Redis,
     integration_id: str,
-    date_from: date,
-    date_to: date,
+    date_from: str,
+    date_to: str,
 ) -> dict:
     cache_key = f"kpi:{integration_id}:{date_from}:{date_to}"
     cached = await redis.get(cache_key)

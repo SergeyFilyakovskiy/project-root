@@ -1,12 +1,12 @@
-from datetime import date
+
 from clickhouse_driver import Client
 from app.repositories.clickhouse_repo import get_metrics
 
 def get_funnel(
     client: Client,
     integration_id: str,
-    date_from: date,
-    date_to: date,
+    date_from: str,
+    date_to: str,
 ) -> dict:
     rows = get_metrics(client, integration_id=integration_id, date_from=date_from, date_to=date_to)
 

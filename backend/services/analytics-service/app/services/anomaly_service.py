@@ -1,4 +1,4 @@
-from datetime import datetime
+
 from clickhouse_driver import Client
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.clickhouse_repo import get_metrics_for_anomaly
