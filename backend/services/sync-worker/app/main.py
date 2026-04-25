@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    connection = await aio_pika.connect_robust(settings.get_rabbitmq_url())
+    connection = await aio_pika.connect_robust(settings.get_rabbitmq_url(), timeout=10)
 
     response_consumer = ResponseConsumer(connection)
     await response_consumer.start()

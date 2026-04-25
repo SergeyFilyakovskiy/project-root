@@ -2,7 +2,7 @@ import json
 import aio_pika
 from app.core.config import settings
 from app.core.logging import logger
-from app.messaging.schemas import RawDataMessage
+from app.messaging.schemas import NormalizedBatchMessage, RawDataMessage
 from app.services.normalizer import normalize
 from app.services.currency_service import get_exchange_rates, convert_to_base
 from app.services.time_zone_service import to_utc
@@ -15,11 +15,17 @@ async def process_message(
         message: aio_pika.abc.AbstractIncomingMessage,
         ):
     async with message.process():
+        redis = await get_redis()
         try:
-            redis = await get_redis()
             body = json.loads(message.body.decode())
             raw_message = RawDataMessage(**body)
-            logger.info(f"[consumer] Получено: platform={raw_message.platform} integration={raw_message.integration_id}")
+            logger.info(
+                "[consumer] Получено: platform=%s integration=%s %s–%s",
+                raw_message.platform,
+                raw_message.integration_id,
+                raw_message.date_from,
+                raw_message.date_to,
+            )
 
             metrics = normalize(raw_message)
 
@@ -29,16 +35,24 @@ async def process_message(
                 m.cpc = round(m.spend / m.clicks, 4) if m.clicks > 0 else 0.0
                 m.currency = "USD"
 
-            
             for m in metrics:
                 m.date = to_utc(m.date)
-                
 
             client = get_clickhouse_client()
             insert_metrics(client, metrics)
-            logger.info(f"[consumer] Записано {len(metrics)} строк в ClickHouse")
-            metrics_dicts = [m.model_dump() for m in metrics]
-            await publish_normalized(metrics_dicts)
+            logger.info(
+                "[consumer] Записано %s строк в ClickHouse",
+                len(metrics),
+            )
+
+            batch = NormalizedBatchMessage(
+                integration_id=raw_message.integration_id,
+                platform=raw_message.platform,
+                date_from=raw_message.date_from,
+                date_to=raw_message.date_to,
+                metrics=metrics,
+            )
+            await publish_normalized(batch)
 
         except Exception as e:
             logger.error(f"[consumer] Ошибка обработки: {e}")

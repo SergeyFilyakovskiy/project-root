@@ -4,6 +4,8 @@ from typing import Any
 
 class RawDataMessage(BaseModel):
     integration_id: str
+    date_from: str
+    date_to: str
     platform: str
     raw_data: dict[str, Any]
 
@@ -27,3 +29,10 @@ class NormalizedMetric(BaseModel):
         if hasattr(v, "strftime"):
             return v.strftime("%Y-%m-%d")
         return str(v)
+    
+class NormalizedBatchMessage(BaseModel):
+    integration_id: str
+    platform: str
+    date_from: str
+    date_to: str
+    metrics: list[NormalizedMetric]
