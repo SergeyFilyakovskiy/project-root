@@ -5,6 +5,7 @@ from app.services.kpi_service import get_kpi
 from app.services.comparison_service import compare_periods, compare_platforms
 from app.services.funnel_service import get_funnel
 from app.repositories.anomaly_repo import AnomalyRepo
+from app.services.timeseries_service import get_timeseries
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -68,3 +69,13 @@ async def anomalies(
         integration_id,
         is_resolved,
     )
+
+
+@router.get("/timeseries")
+async def timeseries(
+    click: clickhouse_dependency,
+    integration_id: str = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+):
+    return get_timeseries(click, integration_id, date_from, date_to)

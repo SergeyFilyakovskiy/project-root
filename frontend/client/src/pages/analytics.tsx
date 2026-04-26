@@ -173,8 +173,8 @@ export default function Analytics() {
                 {[
                   { label: "Клики", value: kpi.total_clicks?.toLocaleString("ru-RU"), color: "text-chart-1" },
                   { label: "Показы", value: kpi.total_impressions?.toLocaleString("ru-RU"), color: "text-chart-2" },
-                  { label: "CTR", value: kpi.ctr ? `${(kpi.ctr * 100).toFixed(2)}%` : "—", color: "text-chart-3" },
-                  { label: "Расходы", value: kpi.total_cost ? `${kpi.total_cost.toLocaleString("ru-RU")} ₽` : "—", color: "text-chart-4" },
+                  { label: "CTR", value: kpi.ctr != null ? `${Number(kpi.ctr).toFixed(2)}%` : "—" },
+                  { label: "Расходы", value: kpi.total_spend ? `${kpi.total_spend.toLocaleString("ru-RU")} $` : "—" },
                   { label: "CPC", value: kpi.cpc ? `${kpi.cpc.toFixed(2)} ₽` : "—", color: "text-chart-1" },
                   { label: "CPA", value: kpi.cpa ? `${kpi.cpa.toFixed(2)} ₽` : "—", color: "text-chart-5" },
                   { label: "ROAS", value: kpi.roas ? kpi.roas.toFixed(2) : "—", color: "text-chart-2" },

@@ -1,27 +1,18 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { integrationApi, analyticsApi } from "@/lib/api";
 import {
-  MousePointerClick,
-  Eye,
-  TrendingUp,
-  DollarSign,
-  AlertTriangle,
-  Link2,
-  ArrowUpRight,
-  ArrowDownRight,
+  MousePointerClick, Eye, TrendingUp, DollarSign,
+  AlertTriangle, Link2, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -29,28 +20,9 @@ import { ru } from "date-fns/locale";
 const today = format(new Date(), "yyyy-MM-dd");
 const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
 
-// Fallback demo chart data
-const demoChartData = Array.from({ length: 14 }, (_, i) => ({
-  date: format(subDays(new Date(), 13 - i), "dd MMM", { locale: ru }),
-  clicks: Math.floor(Math.random() * 1200 + 400),
-  impressions: Math.floor(Math.random() * 40000 + 15000),
-  cost: Math.floor(Math.random() * 8000 + 2000),
-}));
-
-function KpiCard({
-  title,
-  value,
-  icon: Icon,
-  change,
-  loading,
-  color = "text-primary",
-}: {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-  change?: number;
-  loading?: boolean;
-  color?: string;
+function KpiCard({ title, value, icon: Icon, change, loading, color = "text-primary" }: {
+  title: string; value: string; icon: React.ElementType;
+  change?: number; loading?: boolean; color?: string;
 }) {
   return (
     <Card className="border-border" data-testid={`card-kpi-${title}`}>
@@ -67,9 +39,7 @@ function KpiCard({
               <p className="text-xl font-bold text-foreground">{value}</p>
               {change !== undefined && (
                 <div className={`flex items-center gap-1 mt-1 text-xs ${change >= 0 ? "text-chart-2" : "text-destructive"}`}>
-                  {change >= 0
-                    ? <ArrowUpRight className="w-3 h-3" />
-                    : <ArrowDownRight className="w-3 h-3" />}
+                  {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                   <span>{Math.abs(change).toFixed(1)}% vs прошлый период</span>
                 </div>
               )}
@@ -85,17 +55,26 @@ function KpiCard({
 }
 
 export default function Dashboard() {
+  const [selectedId, setSelectedId] = useState<string>("");
+
   const { data: integrations, isLoading: intLoading } = useQuery({
     queryKey: ["/integrations"],
     queryFn: () => integrationApi.list(),
   });
 
-  const firstIntegration = integrations?.items?.[0];
+  // После загрузки интеграций — берём первую если ничего не выбрано
+  const effectiveId = selectedId || integrations?.items?.[0]?.id;
 
   const { data: kpiData, isLoading: kpiLoading } = useQuery({
-    queryKey: ["/analytics/kpi", firstIntegration?.id],
-    queryFn: () => analyticsApi.kpi(firstIntegration!.id, thirtyDaysAgo, today),
-    enabled: !!firstIntegration?.id,
+    queryKey: ["/analytics/kpi", effectiveId, thirtyDaysAgo, today],
+    queryFn: () => analyticsApi.kpi(effectiveId, thirtyDaysAgo, today),
+    enabled: !!effectiveId,
+  });
+
+  const { data: timeseriesData, isLoading: chartLoading } = useQuery({
+    queryKey: ["/analytics/timeseries", effectiveId, thirtyDaysAgo, today],
+    queryFn: () => analyticsApi.timeseries(effectiveId, thirtyDaysAgo, today),
+    enabled: !!effectiveId,
   });
 
   const { data: anomalies } = useQuery({
@@ -109,18 +88,46 @@ export default function Dashboard() {
   const kpi = kpiData ?? {};
   const isLoading = intLoading || kpiLoading;
 
+  // Форматируем даты для графика: "2024-04-01" → "01 апр"
+  const chartData = Array.isArray(timeseriesData)
+    ? timeseriesData.map((r: any) => ({
+        ...r,
+        date: format(new Date(r.date), "dd MMM", { locale: ru }),
+      }))
+    : [];
+
+  const selectedIntegration = integrations?.items?.find((i: any) => i.id === effectiveId);
+
   return (
     <AppLayout
       title="Дашборд"
       description={`Данные за последние 30 дней · ${format(new Date(), "dd MMMM yyyy", { locale: ru })}`}
     >
-      {/* KPI grid */}
+      {/* Селектор интеграции */}
+      <div className="mb-5">
+        <Select
+          value={effectiveId || ""}
+          onValueChange={setSelectedId}
+        >
+          <SelectTrigger className="w-64 h-8 text-sm" data-testid="select-integration">
+            <SelectValue placeholder="Выберите интеграцию" />
+          </SelectTrigger>
+          <SelectContent>
+            {integrations?.items?.map((i: any) => (
+              <SelectItem key={i.id} value={i.id}>
+                {i.name} · {i.platform}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* KPI карточки */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard
           title="Клики"
           value={kpi.total_clicks?.toLocaleString("ru-RU") ?? "—"}
           icon={MousePointerClick}
-          change={kpi.clicks_change}
           loading={isLoading}
           color="text-chart-1"
         />
@@ -128,79 +135,82 @@ export default function Dashboard() {
           title="Показы"
           value={kpi.total_impressions?.toLocaleString("ru-RU") ?? "—"}
           icon={Eye}
-          change={kpi.impressions_change}
           loading={isLoading}
           color="text-chart-2"
         />
         <KpiCard
           title="CTR"
-          value={kpi.ctr ? `${(kpi.ctr * 100).toFixed(2)}%` : "—"}
+          value={kpi.ctr != null ? `${Number(kpi.ctr).toFixed(2)}%` : "—"}
           icon={TrendingUp}
-          change={kpi.ctr_change}
           loading={isLoading}
           color="text-chart-3"
         />
         <KpiCard
           title="Расходы"
-          value={kpi.total_cost ? `${kpi.total_cost.toLocaleString("ru-RU")} ₽` : "—"}
+          value={kpi.total_spend != null ? `${kpi.total_spend.toLocaleString("ru-RU")} ₽` : "—"}
           icon={DollarSign}
-          change={kpi.cost_change}
           loading={isLoading}
           color="text-chart-4"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Main chart */}
+        {/* График */}
         <Card className="lg:col-span-2 border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Динамика кликов</CardTitle>
             <CardDescription className="text-xs">
-              {firstIntegration
-                ? `Интеграция: ${firstIntegration.name}`
-                : "Подключите интеграцию для отображения данных"}
+              {selectedIntegration ? `Интеграция: ${selectedIntegration.name}` : "Выберите интеграцию"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={demoChartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    color: "hsl(var(--foreground))",
-                    fontSize: 12,
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="clicks"
-                  stroke="hsl(var(--chart-1))"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {chartLoading ? (
+              <Skeleton className="h-56 w-full" />
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="clicks"
+                    name="Клики"
+                    stroke="hsl(var(--chart-1))"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
+                Нет данных за выбранный период
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Status cards */}
+        {/* Правая колонка */}
         <div className="space-y-4">
-          {/* Integrations status */}
           <Card className="border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -218,25 +228,21 @@ export default function Dashboard() {
                 integrations.items.slice(0, 4).map((int: any) => (
                   <div
                     key={int.id}
-                    className="flex items-center justify-between py-1.5"
+                    className="flex items-center justify-between py-1.5 cursor-pointer"
+                    onClick={() => setSelectedId(int.id)}
                     data-testid={`integration-row-${int.id}`}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${int.is_active ? "bg-chart-2" : "bg-muted-foreground"}`} />
+                      <div className={`w-2 h-2 rounded-full ${int.id === effectiveId ? "bg-primary" : int.is_active ? "bg-chart-2" : "bg-muted-foreground"}`} />
                       <span className="text-sm text-foreground truncate max-w-[120px]">{int.name}</span>
                     </div>
-                    <Badge
-                      variant={int.is_active ? "default" : "secondary"}
-                      className="text-xs"
-                    >
+                    <Badge variant={int.is_active ? "default" : "secondary"} className="text-xs">
                       {int.platform}
                     </Badge>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  Нет активных интеграций
-                </p>
+                <p className="text-xs text-muted-foreground text-center py-3">Нет активных интеграций</p>
               )}
               <div className="pt-1 border-t border-border text-xs text-muted-foreground">
                 {activeCount} активных
@@ -244,24 +250,19 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Anomalies */}
           <Card className="border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className={`w-4 h-4 ${unresolvedCount > 0 ? "text-chart-3" : "text-muted-foreground"}`} />
                 Аномалии
                 {unresolvedCount > 0 && (
-                  <Badge variant="destructive" className="text-xs ml-auto">
-                    {unresolvedCount}
-                  </Badge>
+                  <Badge variant="destructive" className="text-xs ml-auto">{unresolvedCount}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {unresolvedCount === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  Аномалий не обнаружено
-                </p>
+                <p className="text-xs text-muted-foreground text-center py-3">Аномалий не обнаружено</p>
               ) : (
                 <p className="text-sm text-chart-3">
                   Обнаружено {unresolvedCount} нерешённых аномалий. Перейдите на страницу аномалий для подробностей.

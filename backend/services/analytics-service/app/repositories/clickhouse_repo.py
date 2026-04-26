@@ -54,9 +54,10 @@ def get_metrics_for_anomaly(
         raise ValueError(f"Недопустимая метрика: {metric}")
     
     rows = client.execute(
-        f"SELECT date, {metric} FROM facts_metrics "
-        "WHERE integration_id = %(integration_id)s "
-        "ORDER BY date DESC",
-        {"integration_id": integration_id, "days": days}
+    f"SELECT date, {metric}, platform FROM facts_metrics "
+    "WHERE integration_id = %(integration_id)s "
+    "AND date >= today() - %(days)s "
+    "ORDER BY date DESC",
+    {"integration_id": integration_id, "days": days}
     )
-    return [{"date": r[0], "value": r[1]} for r in rows] # type: ignore
+    return [{"date": r[0], "value": r[1], "platform": r[2]} for r in rows] # type: ignore

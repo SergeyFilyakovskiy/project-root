@@ -31,7 +31,7 @@ async def detect_and_save_anomalies(
         if deviation >= DEVIATION_THRESHOLD:
             anomaly_data = {
                 "integration_id": integration_id,
-                "platform": "unknown",
+                "platform": latest.get("platform", "unknown"),
                 "metric": metric,
                 "date": latest["date"],
                 "expected": round(avg, 4),
